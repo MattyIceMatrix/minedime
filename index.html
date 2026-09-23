@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MineDime Terminal</title>
+<!-- Blast radius: runs entirely in the viewer's browser. Loads Google Fonts; no other network, no storage, no files.
+     Market, maritime, weather, seismic and geopolitical data are simulated. -->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Big+Shoulders+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3f6f2;--p1:#e7eee8;--p2:#dbe6dd;--line:#bccdc0;--ink:#0a2a1a;--dim:#557462;--phos:#007a47;--amber:#a15c00;--red:#c0392b;--cyan:#006d8f;--glow:transparent;--scan:0;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#000;--p1:#050d08;--p2:#0a1810;--line:#15301f;--ink:#c8f7dc;--dim:#5f8f76;--phos:#00ff88;--amber:#ffb000;--red:#ff4d4d;--cyan:#4cc9f0;--glow:rgba(0,255,136,.45);--scan:1}}
+:root[data-theme="dark"]{--bg:#000;--p1:#050d08;--p2:#0a1810;--line:#15301f;--ink:#c8f7dc;--dim:#5f8f76;--phos:#00ff88;--amber:#ffb000;--red:#ff4d4d;--cyan:#4cc9f0;--glow:rgba(0,255,136,.45);--scan:1}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.5 "IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;-webkit-font-smoothing:antialiased}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:90;opacity:calc(var(--scan) * .5);
+  background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0 2px,rgba(0,0,0,.28) 2px 3px)}
+body.noscan::after{display:none}
+button{font:inherit;color:inherit}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.up{color:var(--phos)}.dn{color:var(--red)}.amb{color:var(--amber)}.cy{color:var(--cyan)}.dim{color:var(--dim)}
+/* marquees */
+.mq{overflow:hidden;white-space:nowrap;border-bottom:1px solid var(--line);position:relative}
+.mq-in{display:inline-block;will-change:transform}
+.mq.px{background:var(--p1)}.mq.px .mq-in{animation:mq 120s linear infinite}
+.mq.px span{display:inline-block;padding:6px 16px;border-right:1px solid var(--line);font-size:12px}
+.mq.px b{color:var(--amber);font-weight:600;margin-right:6px}
+.mq.nw{background:var(--bg)}.mq.nw .mq-in{animation:mq 160s linear infinite}
+.mq.nw span{display:inline-block;padding:5px 26px 5px 0;font-size:12px;color:var(--dim)}
+.mq.nw span i{font-style:normal;color:var(--amber);margin-right:8px}
+.mq:hover .mq-in{animation-play-state:paused}
+@keyframes mq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.flash-up{animation:fu .9s}.flash-dn{animation:fd .9s}
+@keyframes fu{0%{background:rgba(0,255,136,.35)}100%{background:transparent}}
+@keyframes fd{0%{background:rgba(255,77,77,.35)}100%{background:transparent}}
+/* header */
+.hd{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--p1)}
+.logo{font:900 30px/1 "Big Shoulders Display",Impact,"Arial Narrow",sans-serif;letter-spacing:.04em;color:var(--phos);text-shadow:0 0 14px var(--glow);display:flex;align-items:center;gap:10px}
+.logo svg{width:26px;height:26px}
+.cmd{position:relative;max-width:560px;width:100%;justify-self:center}
+.cmd input[type=text]{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:2px;color:var(--amber);font:inherit;font-size:14px;padding:8px 70px 8px 30px;text-transform:uppercase}
+.cmd::before{content:">";position:absolute;left:11px;top:7px;color:var(--phos);font-weight:600}
+.cmd kbd{position:absolute;right:8px;top:7px;border:1px solid var(--line);padding:1px 6px;border-radius:2px;font:inherit;font-size:11px;color:var(--dim)}
+.sugg{position:absolute;left:0;right:0;top:100%;background:var(--p1);border:1px solid var(--line);z-index:30;display:none;max-height:300px;overflow:auto}
+.sugg div{padding:6px 10px;cursor:pointer;display:flex;gap:12px}.sugg div b{color:var(--amber);min-width:62px}
+.sugg div.on,.sugg div:hover{background:var(--p2)}
+.hr{display:flex;gap:14px;align-items:center;font-size:12px}
+.clock{text-align:right;line-height:1.25}.clock b{font-size:17px;color:var(--ink);font-weight:500}
+.ibtn{background:none;border:1px solid var(--line);border-radius:2px;padding:6px 9px;cursor:pointer;color:var(--dim);font-size:12px}
+.ibtn:hover{color:var(--phos);border-color:var(--phos)}
+.sess{display:flex;gap:6px;flex-wrap:wrap;padding:6px 16px;border-bottom:1px solid var(--line);font-size:11.5px;color:var(--dim);align-items:center}
+.sess span{border:1px solid var(--line);padding:2px 8px;border-radius:2px}
+.sess span.open{color:var(--phos);border-color:var(--phos)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--phos);box-shadow:0 0 8px var(--phos);margin-right:6px;animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.25}}
+.sess .sp{flex:1}
+/* tabs */
+.tabs{display:flex;overflow-x:auto;border-bottom:1px solid var(--line);background:var(--p1);scrollbar-width:thin;position:sticky;top:env(safe-area-inset-top,0px);z-index:20}
+.tabs button{background:none;border:0;border-right:1px solid var(--line);padding:9px 14px 8px;cursor:pointer;white-space:nowrap;text-align:left;color:var(--dim);position:relative}
+.tabs button small{display:block;font-size:10px;color:var(--dim);opacity:.8}
+.tabs button b{font-weight:600;color:var(--amber);letter-spacing:.04em}
+.tabs button[aria-selected="true"]{background:var(--bg);color:var(--ink)}
+.tabs button[aria-selected="true"]::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--phos);box-shadow:0 0 10px var(--glow)}
+.tabs button.new b::after{content:"new";font-size:9px;margin-left:6px;padding:0 4px;border:1px solid var(--phos);color:var(--phos);border-radius:2px;vertical-align:1px}
+main{padding:16px;max-width:1500px;margin:0 auto}
+.pane{display:none}.pane.on{display:block;animation:pin .25s ease-out}
+@keyframes pin{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.mq-in,.dot{animation:none!important}.pane.on{animation:none}}
+.ph{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:12px;flex-wrap:wrap}
+.ph h2{font:700 28px/1 "Big Shoulders Display",Impact,sans-serif;margin:0;letter-spacing:.02em}
+.ph p{margin:4px 0 0;color:var(--dim);max-width:78ch}
+.sim{font-size:11px;color:var(--amber);border:1px solid var(--amber);padding:1px 6px;border-radius:2px;vertical-align:3px;margin-left:8px;font-family:"IBM Plex Mono",monospace;font-weight:500}
+/* panels & grids */
+.g{display:grid;gap:12px}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}.g-side{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
+@media (max-width:1000px){.g2,.g3,.g-side{grid-template-columns:1fr}.g4{grid-template-columns:1fr 1fr}}
+.pn{background:var(--p1);border:1px solid var(--line);border-radius:2px;padding:12px;min-width:0}
+.pn h3{margin:0 0 8px;font-size:12px;font-weight:600;color:var(--amber);display:flex;justify-content:space-between;gap:8px;align-items:center}
+.pn h3 span{color:var(--dim);font-weight:400}
+.kpi b{display:block;font:600 24px/1.1 "IBM Plex Mono",monospace;color:var(--ink);font-variant-numeric:tabular-nums}
+.kpi span{color:var(--dim);font-size:11.5px}
+.chips{display:flex;gap:4px;flex-wrap:wrap}
+.chip{background:none;border:1px solid var(--line);border-radius:2px;padding:4px 10px;cursor:pointer;color:var(--dim);font-size:12px}
+.chip[aria-pressed="true"]{background:var(--phos);border-color:var(--phos);color:var(--bg);font-weight:600}
+.chip:hover{border-color:var(--phos)}
+.btn{background:var(--phos);color:var(--bg);border:0;border-radius:2px;padding:10px 16px;font:700 18px/1 "Big Shoulders Display",Impact,sans-serif;letter-spacing:.04em;cursor:pointer;box-shadow:0 0 18px var(--glow)}
+.btn:disabled{opacity:.45;cursor:wait}
+.btn.ghost{background:none;color:var(--phos);border:1px solid var(--phos);box-shadow:none;font:600 12px/1 "IBM Plex Mono",monospace;padding:8px 12px}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:12.5px;font-variant-numeric:tabular-nums}
+th{color:var(--dim);font-weight:500;text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0;background:var(--p1)}
+td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th.l,td.l{text-align:left}
+tbody tr{cursor:default}
+tr.click{cursor:pointer}tr.click:hover td{background:var(--p2)}
+tr.sel td{background:var(--p2)}
+td b{color:var(--amber);font-weight:600}
+.badge{font-size:10.5px;padding:1px 6px;border:1px solid var(--line);border-radius:2px;color:var(--cyan)}
+canvas.c{display:block;width:100%}
+canvas.sp{width:90px;height:22px;display:block}
+.bar{position:relative;height:14px;background:var(--p2);border-radius:1px;overflow:hidden}
+.bar i{position:absolute;top:0;bottom:0}
+.note{color:var(--dim);font-size:11.5px;margin:8px 0 0;max-width:90ch}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:3px}
+.tile{padding:8px 6px;border-radius:2px;cursor:pointer;border:0;text-align:left;color:#fff;min-height:58px}
+.tile b{display:block;font-size:12.5px}.tile span{font-size:12px}
+/* log, stamps */
+.log{height:300px;overflow:auto;margin:0;background:var(--bg);border:1px solid var(--line);border-radius:2px;padding:10px;font-size:12px;line-height:1.6;white-space:pre-wrap}
+.log .ok{color:var(--phos)}.log .bad{color:var(--red)}.log .warn{color:var(--amber)}
+.stamp{display:inline-block;font:700 14px/1 "Big Shoulders Display",sans-serif;padding:3px 7px;border:2px solid;border-radius:2px;transform:rotate(-3deg);letter-spacing:.05em}
+.stamp.pass{color:var(--phos);border-color:var(--phos)}.stamp.rej{color:var(--red);border-color:var(--red)}
+label.f{display:block;color:var(--dim);font-size:11.5px;margin:10px 0 4px}
+label.f .v{float:right;color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--phos)}
+input[type=number],input[type=text],textarea{width:100%;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:2px;font:inherit;padding:7px 8px}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:2px;overflow:hidden}
+.seg button{background:none;border:0;color:var(--dim);padding:8px;cursor:pointer;text-align:left;line-height:1.3;font-size:12px}
+.seg button b{display:block;font-weight:600}
+.seg button[aria-pressed="true"]{background:var(--phos);color:var(--bg)}
+/* gauges, feed */
+.gauge{text-align:center}.gauge svg{width:100%;max-width:170px;height:auto}
+.gauge b{display:block;font-size:13px;margin-top:-6px}.gauge span{font-size:11px;color:var(--dim)}
+.feed{max-height:420px;overflow:auto}
+.feed div{padding:8px 0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:62px 1fr;gap:10px}
+.feed time{color:var(--dim);font-size:11.5px}
+.feed p{margin:0}.feed p i{font-style:normal;font-size:11px;margin-right:6px}
+/* battery flow */
+.flow{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:26px;position:relative;overflow-x:auto;padding:6px 2px}
+.stage{background:var(--p1);border:1px solid var(--line);border-radius:2px;padding:10px;position:relative;z-index:1}
+.stage h4{margin:0 0 8px;font-size:12px;color:var(--amber)}
+.stage .row{display:grid;grid-template-columns:70px 1fr 38px;gap:6px;align-items:center;font-size:11.5px;margin:4px 0}
+.flowsvg{position:absolute;inset:0;pointer-events:none;z-index:0}
+.flowsvg path{fill:none;stroke:var(--phos);stroke-width:2;stroke-dasharray:4 8;animation:dash 1.2s linear infinite;opacity:.8}
+@keyframes dash{to{stroke-dashoffset:-24}}
+/* chat */
+.chat{display:grid;grid-template-rows:1fr auto;height:560px;border:1px solid var(--line);border-radius:2px;background:var(--bg)}
+.msgs{overflow:auto;padding:12px}
+.msg{margin:0 0 14px;max-width:88ch}
+.msg .who{font-size:11px;color:var(--amber);margin-bottom:2px}
+.msg.u .who{color:var(--cyan)}
+.msg .body{white-space:pre-wrap}
+.msg .tool{font-size:11px;color:var(--dim);border-left:2px solid var(--line);padding-left:8px;margin:4px 0}
+.composer{display:grid;grid-template-columns:1fr auto auto;gap:6px;padding:8px;border-top:1px solid var(--line)}
+/* toasts & boot */
+.toasts{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));display:grid;gap:8px;z-index:60;max-width:340px}
+.toast{background:var(--p1);border:1px solid var(--amber);border-left:4px solid var(--amber);padding:10px 12px;font-size:12px;box-shadow:0 6px 24px rgba(0,0,0,.35);animation:tin .3s ease-out}
+.toast b{color:var(--amber);display:block;margin-bottom:2px}
+@keyframes tin{from{transform:translateX(30px);opacity:0}}
+.boot{position:fixed;inset:0;background:#000;color:#00ff88;z-index:100;padding:10vh 8vw;font:14px/1.7 "IBM Plex Mono",monospace;cursor:pointer;transition:opacity .5s}
+.boot.gone{opacity:0;pointer-events:none}
+.boot .lg{font:900 clamp(48px,9vw,110px)/.9 "Big Shoulders Display",Impact,sans-serif;text-shadow:0 0 30px rgba(0,255,136,.6);margin-bottom:18px}
+.boot .cur::after{content:"█";animation:pulse 1s infinite}
+.hide{display:none!important}
+.hd>*{min-width:0}
+@media (max-width:760px){.hd{grid-template-columns:1fr auto;gap:10px;padding:8px 12px}.cmd{grid-column:1/-1;grid-row:2;max-width:none}.clock b{font-size:14px}.clock .dim,#scanBtn{display:none}.logo{font-size:24px}.hr{gap:8px}main{padding:12px}}
+</style>
+</head>
+<body>
+<div class="boot" id="boot" role="status" aria-live="polite"><div class="lg">MINEDIME</div><div id="bootLines"></div><div class="cur"></div><p style="color:#5f8f76;margin-top:24px;font-size:12px">Click or press any key to skip</p></div>
+
+<div class="mq px" aria-label="Live prices"><div class="mq-in" id="mqPx"></div></div>
+<div class="hd">
+  <div class="logo"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 26 L12 8 L16 17 L20 11 L28 26 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><circle cx="20" cy="11" r="2.4" fill="currentColor"/></svg>MINEDIME</div>
+  <div class="cmd"><input id="cmd" type="text" autocomplete="off" spellcheck="false" aria-label="Command line: type a function or ticker and press Enter" placeholder="Type a function or ticker: ALPHA, WTI, BTC"><kbd>/</kbd><div class="sugg" id="sugg" role="listbox"></div></div>
+  <div class="hr">
+    <div class="clock"><b id="clk">--:--:--</b><br><span class="dim" id="clkd">UTC</span></div>
+    <button class="ibtn" id="scanBtn" type="button" title="Toggle CRT scanlines">CRT</button>
+    <button class="ibtn" id="themeBtn" type="button" title="Switch light or dark">Theme</button>
+  </div>
+</div>
+<div class="sess" id="sess"></div>
+<div class="mq nw" aria-label="News wire"><div class="mq-in" id="mqNw"></div></div>
+<nav class="tabs" role="tablist" id="tabs"></nav>
+
+<main>
+<!-- MARKETS -->
+<section class="pane" id="p-mkt" role="tabpanel">
+  <div class="ph"><div><h2>Markets<span class="sim">SIMULATED FEED</span></h2><p>26 assets: 10 physical commodities and the 16 CFTC-classified digital commodities. Click any row or tile to chart it.</p></div>
+  <div class="chips" id="secF"></div></div>
+  <div class="g g4" id="mktK" style="margin-bottom:12px"></div>
+  <div class="g g-side">
+    <div class="pn"><h3>Quotes <span id="qCount"></span></h3><div class="scroll" style="max-height:640px"><table id="qt"><thead><tr><th class="l">Symbol</th><th class="l">Name</th><th>Last</th><th>Day</th><th>1M</th><th>1Y</th><th>Vol (ann.)</th><th>60 days</th></tr></thead><tbody></tbody></table></div></div>
+    <div class="g" style="align-content:start">
+      <div class="pn"><h3><span style="color:var(--amber)" id="chT">WTI</span><span class="chips" id="rngF"></span></h3>
+        <canvas class="c" id="chMain" height="300"></canvas>
+        <div class="chips" style="margin-top:8px"><button class="chip" id="smaB" aria-pressed="true" type="button">SMA 20/50</button><button class="chip" id="bbB" aria-pressed="false" type="button">Bollinger</button></div>
+        <div class="g g3" id="chStats" style="margin-top:10px"></div></div>
+      <div class="pn"><h3>Today's heat <span>color = today's move, click to chart</span></h3><div class="tiles" id="tiles"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ALPHA -->
+<section class="pane" id="p-alpha" role="tabpanel">
+  <div class="ph"><div><h2>Alpha Lab</h2><p>An evolutionary engine invents trading formulas across all 26 assets. A statistical tribunal then tries to prove each one is luck. Search on years 1 to 5, replicate on years 5 to 7, and years 8 to 10 stay sealed in the vault.</p></div></div>
+  <div class="g" style="grid-template-columns:300px minmax(0,1fr)" id="alphaGrid">
+    <div class="pn">
+      <label class="f" id="mkL" style="margin-top:0">Market to hunt in</label>
+      <div class="seg" role="group" aria-labelledby="mkL">
+        <button type="button" id="mReal" aria-pressed="true"><b>Planted edges</b>Two real, weak edges in noise</button>
+        <button type="button" id="mTrap" aria-pressed="false"><b>The trap</b>Pure noise, zero edge</button>
+      </div>
+      <label class="f" for="pop">Formulas per generation <span class="v" id="popV"></span></label><input type="range" id="pop" min="60" max="240" step="20" value="140">
+      <label class="f" for="gens">Generations <span class="v" id="gensV"></span></label><input type="range" id="gens" min="6" max="24" step="2" value="14">
+      <label class="f" for="bps">Cost per unit turnover <span class="v" id="bpsV"></span></label><input type="range" id="bps" min="0" max="20" step="1" value="5">
+      <label class="f" for="seed">Market seed</label><input type="number" id="seed" value="505" min="1" max="99999">
+      <button class="btn" id="go" type="button" style="width:100%;margin-top:14px">Run the forge</button>
+      <div class="g g2" style="margin-top:12px" id="alphaK"></div>
+    </div>
+    <div class="g" style="align-content:start">
+      <pre class="log" id="log" aria-live="polite">Choose a market and run the forge. Results flow into the Tribunal and Risk tabs, and the AI Analyst can read them.</pre>
+      <div class="pn"><h3>The luck bar <span>every formula tried, by search Sharpe</span></h3>
+        <canvas class="c" id="luck" height="230"></canvas>
+        <p class="note">The dashed line is the best Sharpe pure chance would produce after this many independent tries. Touching it isn't enough: a candidate must beat it with 95% confidence, then replicate on data the search never touched. Green dots were approved, red were rejected.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- TRIBUNAL -->
+<section class="pane" id="p-trib" role="tabpanel">
+  <div class="ph"><div><h2>Tribunal</h2><p id="tribSub">Verdicts appear here after an Alpha Lab run.</p></div><button class="btn ghost" type="button" data-go="alpha">Open Alpha Lab</button></div>
+  <div class="pn"><div class="scroll" id="verd"><p class="dim">No verdicts yet.</p></div></div>
+  <div class="pn" style="margin-top:12px"><h3>Equity through the vault <span>cumulative return after costs</span></h3>
+    <canvas class="c" id="eq" height="280"></canvas>
+    <p class="note"><span class="dn">Red</span>: ship the whole hall of fame. <span class="up">Green</span>: tribunal-approved ensemble. Bands mark the validation stretch and the sealed vault. Compare them by Sharpe on the Risk tab, not by raw height.</p></div>
+</section>
+
+<!-- RISK -->
+<section class="pane" id="p-risk" role="tabpanel">
+  <div class="ph"><div><h2>Risk desk</h2><p>VaR on the tribunal-approved book, then stress it against scenarios that hit commodities and crypto.</p></div>
+  <div style="min-width:220px"><label class="f" for="book" style="margin-top:0">Book size (USD)</label><input type="number" id="book" value="1000000" min="1000" step="10000"></div></div>
+  <div class="g g2">
+    <div class="pn"><h3>One-day value at risk <span>approved ensemble, vault returns</span></h3><div id="varOut"><p class="dim">The desk only sizes approved alphas. Run the Alpha Lab on the planted-edges market.</p></div></div>
+    <div class="pn"><h3>Stress scenarios <span>book P&amp;L, instant shock</span></h3><div class="chips" id="stressC" style="margin-bottom:10px"></div><div id="stressOut"></div></div>
+  </div>
+  <div class="pn" style="margin-top:12px"><h3>Correlation matrix <span>last 250 days, all 26 assets</span></h3><canvas class="c" id="heat" height="560"></canvas></div>
+</section>
+
+<!-- DIGITAL -->
+<section class="pane" id="p-dgtl" role="tabpanel">
+  <div class="ph"><div><h2>Digital commodities<span class="sim">SIMULATED FEED</span></h2><p>The 16 crypto assets MineDime tracks as digital commodities under the CFTC framework, not as securities.</p></div></div>
+  <div class="g g4" id="dgK" style="margin-bottom:12px"></div>
+  <div class="pn"><div class="scroll"><table id="dgT"><thead><tr><th class="l">Symbol</th><th class="l">Name</th><th class="l">Class</th><th>Price</th><th>Day</th><th>Market cap</th><th>Volume</th><th>30 days</th></tr></thead><tbody></tbody></table></div>
+  <p class="note">A digital commodity is a fungible digital asset that trades on a blockchain and isn't a security. Spot markets fall under the CFTC's anti-fraud and anti-manipulation authority. Market cap and volume figures are reference values from MineDime's March 2026 data set.</p></div>
+</section>
+
+<!-- COT -->
+<section class="pane" id="p-cot" role="tabpanel">
+  <div class="ph"><div><h2>Positioning<span class="sim">SIMULATED</span></h2><p>Commitments of Traders: how speculators (managed money) and hedgers (commercials) are positioned. Extremes in either direction often precede reversals.</p></div></div>
+  <div class="pn"><div class="scroll"><table id="cotT"><thead><tr><th class="l">Market</th><th class="l" style="width:34%">Managed money net (short ← → long)</th><th>Net contracts</th><th>Week change</th><th>3-year percentile</th><th class="l">Signal</th></tr></thead><tbody></tbody></table></div></div>
+</section>
+
+<!-- CRACK -->
+<section class="pane" id="p-crack" role="tabpanel">
+  <div class="ph"><div><h2>Crack spreads<span class="sim">SIMULATED</span></h2><p>A refiner's margin: what the gasoline and diesel from a barrel sell for, minus the crude. Wide cracks pull crude demand up.</p></div></div>
+  <div class="g g4" id="crK" style="margin-bottom:12px"></div>
+  <div class="pn"><h3>Refining margins, USD per barrel <span class="chips" id="crR"></span></h3><canvas class="c" id="crC" height="320"></canvas></div>
+</section>
+
+<!-- CURVE -->
+<section class="pane" id="p-curve" role="tabpanel">
+  <div class="ph"><div><h2>Forward curves<span class="sim">SIMULATED</span></h2><p>Futures prices by delivery month. Downward sloping (backwardation) means tight supply today; upward (contango) means ample supply and paid storage.</p></div><div class="chips" id="cvC"></div></div>
+  <div class="g g-side">
+    <div class="pn"><h3 id="cvT">Curve</h3><canvas class="c" id="cvCan" height="330"></canvas></div>
+    <div class="pn"><h3>Structure</h3><div id="cvS"></div></div>
+  </div>
+</section>
+
+<!-- SHIP -->
+<section class="pane" id="p-ship" role="tabpanel">
+  <div class="ph"><div><h2>Maritime intelligence<span class="sim">SIMULATED</span></h2><p>Tanker and bulk traffic through the world's energy chokepoints. Rings pulse with each chokepoint's risk level.</p></div></div>
+  <div class="pn"><canvas class="c" id="mapC" height="420" role="img" aria-label="Animated map of shipping routes and chokepoints"></canvas></div>
+  <div class="g g2" style="margin-top:12px">
+    <div class="pn"><h3>Chokepoints <span>transits and oil flow</span></h3><div class="scroll"><table id="chkT"><thead><tr><th class="l">Chokepoint</th><th>Transits today</th><th>vs 30d avg</th><th>Oil flow (mb/d)</th><th class="l">Risk</th></tr></thead><tbody></tbody></table></div>
+      <p class="note">Oil flows are rounded, public-domain estimates for scale. Transit counts are simulated.</p></div>
+    <div class="pn"><h3>Floating storage <span>million barrels at sea</span></h3><canvas class="c" id="fsC" height="230"></canvas></div>
+  </div>
+</section>
+
+<!-- BATT -->
+<section class="pane" id="p-batt" role="tabpanel">
+  <div class="ph"><div><h2>Battery supply chain</h2><p>From mine to electric vehicle. Each stage shows approximate global share by country. The concentration at refining is where the supply risk sits.</p></div></div>
+  <div class="flow" id="flow"></div>
+  <div class="g g3" style="margin-top:12px" id="battK"></div>
+  <p class="note">Shares are rounded, approximate public estimates for illustration, not a data feed.</p>
+</section>
+
+<!-- OPS -->
+<section class="pane" id="p-ops" role="tabpanel">
+  <div class="ph"><div><h2>Mine operations<span class="sim">SIMULATED</span></h2><p>Weather and seismic conditions at ten of the world's largest mines. An alert fires when a quake hits within 300 km of a site.</p></div></div>
+  <div class="g g-side">
+    <div class="pn"><h3>Site conditions</h3><div class="scroll"><table id="opsT"><thead><tr><th class="l">Site</th><th class="l">Commodity</th><th>Temp</th><th>Wind</th><th>Rain 24h</th><th class="l">Status</th></tr></thead><tbody></tbody></table></div></div>
+    <div class="pn"><h3>Seismic feed <span id="qkN"></span></h3><div class="feed" id="qk"></div></div>
+  </div>
+</section>
+
+<!-- GEO -->
+<section class="pane" id="p-geo" role="tabpanel">
+  <div class="ph"><div><h2>Geopolitical risk<span class="sim">SIMULATED</span></h2><p>Risk scores from 0 to 100 for the regions that move commodity supply, with the markets each one touches.</p></div></div>
+  <div class="g g4" id="geoG"></div>
+  <div class="pn" style="margin-top:12px"><h3>Event wire</h3><div class="feed" id="geoF"></div></div>
+</section>
+
+<!-- AI -->
+<section class="pane" id="p-ai" role="tabpanel">
+  <div class="ph"><div><h2>AI Analyst</h2><p>Claude with a live line into this terminal. It pulls quotes, curves, positioning, chokepoints and your Alpha Lab verdicts before it answers.</p></div></div>
+  <div class="g g-side">
+    <div class="chat"><div class="msgs" id="msgs"><div class="msg"><div class="who">ANALYST</div><div class="body">Ask about any market on the board, or run the Alpha Lab first and ask me to review the tribunal's calls. Everything on this terminal is simulated, and I'll say so when it matters.</div></div></div>
+      <div class="composer"><input type="text" id="ask" placeholder="Ask the analyst" aria-label="Ask the analyst"><button class="btn ghost" id="stop" type="button" disabled>Stop</button><button class="btn" id="send" type="button">Send</button></div></div>
+    <div class="pn"><h3>Briefings</h3><div class="g" id="presets"></div>
+      <p class="note" id="aiNote">Each question uses your own Claude usage and asks your permission the first time.</p></div>
+  </div>
+</section>
+</main>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script>
+/* MineDime Alpha Lab engine: QuantForge ported to JavaScript.
+   Blast radius: pure in-memory computation. No network, no storage, no files. */
+(function (root) {
+'use strict';
+// ---------- RNG ----------
+function RNG(seed) { let s = seed >>> 0 || 1;
+  const r = () => { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; };
+  r.int = n => Math.floor(r() * n);
+  r.pick = a => a[Math.floor(r() * a.length)];
+  r.normal = () => { let u = 0, v = 0; while (!u) u = r(); v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  r.t5 = () => { let c = 0; for (let k = 0; k < 5; k++) { const z = r.normal(); c += z * z; } return r.normal() / Math.sqrt(c / 5) / Math.sqrt(5 / 3); };
+  return r; }
+
+// ---------- MineDime universe ----------
+const UNIVERSE = [
+  ['WTI','Crude Oil (WTI)','energy',72],['BRENT','Brent Crude','energy',76],['NG','Natural Gas','energy',3.1],
+  ['XAU','Gold','metals',2350],['XAG','Silver','metals',28],['XPT','Platinum','metals',980],
+  ['HG','Copper','metals',4.4],['LI','Lithium','metals',11],['ZW','Wheat','ags',5.8],['ZC','Corn','ags',4.3],
+  ['BTC','Bitcoin','crypto',87240],['ETH','Ether','crypto',3420],['SOL','Solana','crypto',142.8],
+  ['XRP','XRP','crypto',2.34],['ADA','Cardano','crypto',0.72],['AVAX','Avalanche','crypto',38.5],
+  ['DOT','Polkadot','crypto',7.12],['LINK','Chainlink','crypto',18.9],['LTC','Litecoin','crypto',98.4],
+  ['DOGE','Dogecoin','crypto',0.182],['SHIB','Shiba Inu','crypto',0.0000248],['HBAR','Hedera','crypto',0.284],
+  ['XLM','Stellar','crypto',0.128],['APT','Aptos','crypto',9.42],['XTZ','Tezos','crypto',1.08],['BCH','Bitcoin Cash','crypto',342]];
+const SECTOR_VOL = { energy: [0.018, 0.035], metals: [0.009, 0.024], ags: [0.013, 0.02], crypto: [0.03, 0.06] };
+
+function cz(a) { let m = 0; for (const v of a) m += v; m /= a.length; let s = 0; for (const v of a) s += (v - m) ** 2;
+  s = Math.sqrt(s / a.length) + 1e-12; return a.map(v => (v - m) / s); }
+
+function simulate(T, seed, edge) {
+  const N = UNIVERSE.length, rng = RNG(seed);
+  const aRev = 0.05 * edge, aMom = 0.03 * edge;
+  const sectors = [...new Set(UNIVERSE.map(u => u[2]))];
+  const base = UNIVERSE.map(u => { const [lo, hi] = SECTOR_VOL[u[2]]; return lo + rng() * (hi - lo); });
+  const beta = UNIVERSE.map(() => 0.5 + rng());
+  const R = new Float64Array(T * N), Z = new Float64Array(T * N), SIG = new Float64Array(T * N);
+  let mv = 1e-4, mp = 0; const hv = new Float64Array(N);
+  for (let t = 0; t < T; t++) {
+    mv = 2e-6 + 0.08 * mp * mp + 0.9 * mv; const m = Math.sqrt(mv) * rng.t5();
+    const sf = {}; for (const s of sectors) sf[s] = rng.t5() * (s === 'crypto' ? 0.012 : 0.005);
+    let e = new Array(N).fill(0);
+    if (t >= 60) {
+      const s5 = [], s55 = [];
+      for (let i = 0; i < N; i++) { let a = 0, b = 0;
+        for (let k = t - 5; k < t; k++) a += Z[k * N + i];
+        for (let k = t - 60; k < t - 5; k++) b += Z[k * N + i];
+        s5.push(a); s55.push(b); }
+      const c5 = cz(s5), c55 = cz(s55);
+      e = c5.map((v, i) => -aRev * v + aMom * c55[i]);
+    }
+    for (let i = 0; i < N; i++) {
+      hv[i] = 0.98 * hv[i] + 0.2 * rng.normal();
+      const sig = base[i] * Math.exp(0.3 * Math.tanh(hv[i]));
+      const z = rng.t5() + e[i];
+      Z[t * N + i] = z; SIG[t * N + i] = sig;
+      R[t * N + i] = beta[i] * m + sf[UNIVERSE[i][2]] + sig * z;
+    }
+    mp = m;
+  }
+  return build(R, T, N, rng, base);
+}
+
+function build(R, T, N, rng, base) {
+  const close = new Float64Array(T * N), open = new Float64Array(T * N), high = new Float64Array(T * N),
+    low = new Float64Array(T * N), volume = new Float64Array(T * N), vwap = new Float64Array(T * N),
+    returns = new Float64Array(T * N).fill(NaN), fwd = new Float64Array(T * N).fill(NaN);
+  const lv = new Float64Array(N);
+  // Anchor so the final day matches MineDime's reference price for each asset.
+  for (let i = 0; i < N; i++) { let c = 0; for (let t = 0; t < T; t++) { c += R[t * N + i]; close[t * N + i] = c; }
+    for (let t = 0; t < T; t++) close[t * N + i] = UNIVERSE[i][3] * Math.exp(close[t * N + i] - c); }
+  for (let t = 0; t < T; t++) for (let i = 0; i < N; i++) {
+    const k = t * N + i, r = R[k], prev = t ? close[k - N] : close[k] / Math.exp(r);
+    open[k] = prev * Math.exp(0.3 * r + 0.002 * rng.normal());
+    const hl = Math.abs(rng.normal()) * base[i] * 0.5;
+    high[k] = Math.max(open[k], close[k]) * Math.exp(hl); low[k] = Math.min(open[k], close[k]) * Math.exp(-hl);
+    vwap[k] = (high[k] + low[k] + close[k]) / 3;
+    lv[i] = 0.9 * lv[i] + 0.3 * rng.normal();
+    volume[k] = Math.exp(14 + lv[i] + 0.6 * Math.abs(r / base[i]));
+    if (t) returns[k] = close[k] / close[k - N] - 1;
+    if (t < T - 1) fwd[k] = Math.exp(R[k + N]) - 1;
+  }
+  return { T, N, close, open, high, low, volume, vwap, returns, _fwd: fwd };
+}
+
+// ---------- operators (all backward-looking) ----------
+function P(T, N) { return new Float64Array(T * N).fill(NaN); }
+function roll(x, T, N, d, fn) { // generic window
+  const o = P(T, N), w = new Float64Array(d);
+  for (let i = 0; i < N; i++) for (let t = d - 1; t < T; t++) {
+    let bad = false; for (let k = 0; k < d; k++) { const v = x[(t - d + 1 + k) * N + i]; if (v !== v) { bad = true; break; } w[k] = v; }
+    if (!bad) o[t * N + i] = fn(w, d); }
+  return o; }
+function rsum(x, T, N, d, sq) { // rolling sum / sum of squares, NaN-aware, O(TN)
+  const o = P(T, N);
+  for (let i = 0; i < N; i++) { let s = 0, nan = 0;
+    for (let t = 0; t < T; t++) { const v = x[t * N + i]; if (v !== v) nan++; else s += sq ? v * v : v;
+      if (t >= d) { const u = x[(t - d) * N + i]; if (u !== u) nan--; else s -= sq ? u * u : u; }
+      if (t >= d - 1 && !nan) o[t * N + i] = s; } }
+  return o; }
+const ew = (a, b, f) => { const o = new Float64Array(a.length); for (let k = 0; k < a.length; k++) o[k] = f(a[k], b ? b[k] : 0); return o; };
+const OPS = {
+  ts_mean: [1, true, (x, T, N, d) => ew(rsum(x, T, N, d), null, v => v / d)],
+  ts_sum: [1, true, (x, T, N, d) => rsum(x, T, N, d)],
+  ts_std: [1, true, (x, T, N, d) => { const s = rsum(x, T, N, d), q = rsum(x, T, N, d, true);
+    return ew(s, q, (a, b) => Math.sqrt(Math.max(b / d - (a / d) ** 2, 0))); }],
+  ts_zscore: [1, true, (x, T, N, d) => { const m = OPS.ts_mean[2](x, T, N, d), s = OPS.ts_std[2](x, T, N, d);
+    const o = new Float64Array(x.length); for (let k = 0; k < o.length; k++) o[k] = s[k] > 1e-12 ? (x[k] - m[k]) / s[k] : NaN; return o; }],
+  ts_delta: [1, true, (x, T, N, d) => { const o = P(T, N); for (let k = d * N; k < x.length; k++) o[k] = x[k] - x[k - d * N]; return o; }],
+  ts_max: [1, true, (x, T, N, d) => roll(x, T, N, d, (w, n) => { let m = w[0]; for (let k = 1; k < n; k++) if (w[k] > m) m = w[k]; return m; })],
+  ts_min: [1, true, (x, T, N, d) => roll(x, T, N, d, (w, n) => { let m = w[0]; for (let k = 1; k < n; k++) if (w[k] < m) m = w[k]; return m; })],
+  ts_rank: [1, true, (x, T, N, d) => roll(x, T, N, d, w => { let c = 0; for (let k = 0; k < d - 1; k++) if (w[k] < w[d - 1]) c++; return c / (d - 1); })],
+  ts_corr: [2, true, (x, y, T, N, d) => { const xy = ew(x, y, (a, b) => a * b);
+    const sx = rsum(x, T, N, d), sy = rsum(y, T, N, d), sxx = rsum(x, T, N, d, true), syy = rsum(y, T, N, d, true), sxy = rsum(xy, T, N, d);
+    const o = new Float64Array(x.length);
+    for (let k = 0; k < o.length; k++) { const cv = sxy[k] - sx[k] * sy[k] / d, vx = sxx[k] - sx[k] ** 2 / d, vy = syy[k] - sy[k] ** 2 / d;
+      o[k] = vx > 1e-12 && vy > 1e-12 ? cv / Math.sqrt(vx * vy) : NaN; } return o; }],
+  cs_rank: [1, false, (x, T, N) => { const o = P(T, N);
+    for (let t = 0; t < T; t++) { const idx = []; for (let i = 0; i < N; i++) if (x[t * N + i] === x[t * N + i]) idx.push(i);
+      idx.sort((a, b) => x[t * N + a] - x[t * N + b]); const n = idx.length;
+      idx.forEach((i, r) => o[t * N + i] = r / Math.max(n - 1, 1) - 0.5); } return o; }],
+  cs_zscore: [1, false, (x, T, N) => { const o = P(T, N);
+    for (let t = 0; t < T; t++) { let s = 0, q = 0, n = 0; for (let i = 0; i < N; i++) { const v = x[t * N + i]; if (v === v) { s += v; q += v * v; n++; } }
+      if (n < 2) continue; const m = s / n, sd = Math.sqrt(Math.max(q / n - m * m, 0));
+      if (sd > 1e-12) for (let i = 0; i < N; i++) o[t * N + i] = (x[t * N + i] - m) / sd; } return o; }],
+  add: [2, false, (a, b) => ew(a, b, (u, v) => u + v)], sub: [2, false, (a, b) => ew(a, b, (u, v) => u - v)],
+  mul: [2, false, (a, b) => ew(a, b, (u, v) => u * v)],
+  div: [2, false, (a, b) => ew(a, b, (u, v) => Math.abs(v) > 1e-12 ? u / v : NaN)],
+  neg: [1, false, a => ew(a, null, u => -u)], abs: [1, false, a => ew(a, null, Math.abs)],
+  slog: [1, false, a => ew(a, null, u => Math.sign(u) * Math.log1p(Math.abs(u)))],
+  sign: [1, false, a => ew(a, null, Math.sign)],
+};
+const OPNAMES = Object.keys(OPS), WINDOWS = [3, 5, 10, 20, 40, 60];
+const TERMS = ['close', 'open', 'high', 'low', 'volume', 'returns', 'vwap'];
+
+// ---------- genomes ----------
+const str = n => n.c.length ? `${n.op}(${n.c.map(str).concat(n.w ? [n.w] : []).join(', ')})` : n.op;
+const size = n => 1 + n.c.reduce((s, c) => s + size(c), 0);
+const depth = n => 1 + n.c.reduce((m, c) => Math.max(m, depth(c)), 0);
+function grow(r, md) {
+  if (md <= 1 || (md < 4 && r() < 0.3)) return { op: r.pick(TERMS), c: [], w: 0 };
+  const op = r.pick(OPNAMES), [ar, win] = OPS[op];
+  return { op, c: Array.from({ length: ar }, () => grow(r, md - 1)), w: win ? r.pick(WINDOWS) : 0 }; }
+function paths(n, p = [], out = []) { out.push(p); n.c.forEach((c, i) => paths(c, p.concat(i), out)); return out; }
+const get = (n, p) => p.reduce((m, i) => m.c[i], n);
+function set(n, p, v) { if (!p.length) return v; const c = n.c.slice(); c[p[0]] = set(c[p[0]], p.slice(1), v); return { ...n, c }; }
+function mutate(r, n, md) {
+  const ps = paths(n), p = r.pick(ps), tg = get(n, p), x = r(); let nw;
+  if (x < 0.4) nw = grow(r, Math.max(2, md - p.length));
+  else if (x < 0.7 && tg.w) nw = { ...tg, w: r.pick(WINDOWS) };
+  else if (tg.c.length) { const same = OPNAMES.filter(k => OPS[k][0] === tg.c.length && OPS[k][1] === !!tg.w); nw = { ...tg, op: r.pick(same) }; }
+  else nw = { op: r.pick(TERMS), c: [], w: 0 };
+  const o = set(n, p, nw); return depth(o) <= md + 1 ? o : n; }
+function crossover(r, a, b, md) {
+  const o = set(a, r.pick(paths(a)), get(b, r.pick(paths(b)))); return depth(o) <= md + 1 ? o : a; }
+function evaluate(n, D, cache) {
+  const k = str(n); if (cache.has(k)) return cache.get(k);
+  let o;
+  if (!n.c.length) o = D[n.op];
+  else { const args = n.c.map(c => evaluate(c, D, cache)), f = OPS[n.op][2];
+    o = n.w ? f(...args, D.T, D.N, n.w) : f(...args, D.T, D.N); }
+  if (cache.size < 120) cache.set(k, o); return o; }
+
+// ---------- backtest ----------
+function volScale(D) { // inverse 20-day vol: risk-balance crypto vs gold
+  if (D._iv) return D._iv; const s = OPS.ts_std[2](D.returns, D.T, D.N, 20);
+  D._iv = ew(s, null, v => v > 1e-9 ? 1 / v : NaN); return D._iv; }
+function weights(sig, D) {
+  const { T, N } = D, iv = volScale(D), W = new Float64Array(T * N);
+  for (let t = 0; t < T; t++) { let m = 0, n = 0;
+    for (let i = 0; i < N; i++) { const v = sig[t * N + i]; if (v === v && isFinite(v)) { m += v; n++; } }
+    if (n < 3) continue; m /= n; let g = 0;
+    for (let i = 0; i < N; i++) { const k = t * N + i, v = sig[k]; const w = (v === v && isFinite(v) && iv[k] === iv[k]) ? (v - m) * iv[k] : 0; W[k] = w; g += Math.abs(w); }
+    if (g > 0) for (let i = 0; i < N; i++) W[t * N + i] /= g; }
+  return W; }
+function pnlOf(W, D, a, b, flip, bps) {
+  const { N } = D, out = new Float64Array(b - a); let to = 0;
+  for (let t = a; t < b; t++) { let g = 0, tt = 0;
+    for (let i = 0; i < N; i++) { const k = t * N + i, f = D._fwd[k]; if (f === f) g += W[k] * f; tt += Math.abs(W[k] - (t ? W[k - N] : 0)); }
+    out[t - a] = (flip ? -g : g) - tt * bps / 1e4; to += tt; }
+  return { pnl: out, to: to / (b - a) }; }
+const mean = a => { let s = 0; for (const v of a) s += v; return s / a.length; };
+const sd = a => { const m = mean(a); let s = 0; for (const v of a) s += (v - m) ** 2; return Math.sqrt(s / a.length); };
+const sharpe = a => { const s = sd(a); return s > 0 ? mean(a) / s * Math.sqrt(252) : 0; };
+function maxDD(a) { let e = 0, pk = 0, dd = 0; for (const v of a) { e += v; pk = Math.max(pk, e); dd = Math.max(dd, pk - e); } return dd; }
+
+// ---------- tribunal math ----------
+function erf(x) { const s = Math.sign(x); x = Math.abs(x); const t = 1 / (1 + 0.3275911 * x);
+  return s * (1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x)); }
+const ncdf = x => 0.5 * (1 + erf(x / Math.SQRT2));
+function nppf(p) { // Acklam
+  const a = [-39.69683028665376, 220.9460984245205, -275.9285104469687, 138.357751867269, -30.66479806614716, 2.506628277459239],
+    b = [-54.47609879822406, 161.5858368580409, -155.6989798598866, 66.80131188771972, -13.28068155288572],
+    c = [-0.007784894002430293, -0.3223964580411365, -2.400758277161838, -2.549732539343734, 4.374664141464968, 2.938163982698783],
+    d = [0.007784695709041462, 0.3224671290700398, 2.445134137142996, 3.754408661907416];
+  if (p < 0.02425) { const q = Math.sqrt(-2 * Math.log(p)); return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+  if (p > 1 - 0.02425) return -nppf(1 - p);
+  const q = p - 0.5, r = q * q;
+  return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1); }
+function autocorrInflation(pnl, q = 10) { // Newey-West: how much sticky P&L inflates Sharpe precision (Lo 2002)
+  const T = pnl.length, m = mean(pnl); let v = 0; for (const x of pnl) v += (x - m) ** 2; if (!v) return 1;
+  let eta = 1; for (let k = 1; k <= q; k++) { let c = 0; for (let t = k; t < T; t++) c += (pnl[t] - m) * (pnl[t - k] - m);
+    eta += 2 * (1 - k / (q + 1)) * (c / v); }
+  return Math.max(eta, 1); }
+function deflatedSharpe(pnl, nTrials) {
+  // Null: zero skill. Per-period Sharpe variance ~ eta/T, where eta corrects for autocorrelated P&L.
+  const eta = autocorrInflation(pnl), T = pnl.length, Teff = T / eta, varSR = 1 / Teff;
+  const m = mean(pnl), s = sd(pnl), sr = m / s, n = Math.max(nTrials, 2), g = 0.5772156649;
+  const sr0 = Math.sqrt(varSR) * ((1 - g) * nppf(1 - 1 / n) + g * nppf(1 - 1 / (n * Math.E)));
+  let g3 = 0, g4 = 0; for (const v of pnl) { const z = (v - m) / s; g3 += z ** 3; g4 += z ** 4; } g3 /= T; g4 /= T;
+  const den = Math.sqrt(Math.max(1 - g3 * sr + (g4 - 1) / 4 * sr * sr, 1e-12));
+  return { dsr: ncdf((sr - sr0) * Math.sqrt(Teff - 1) / den), bar: sr0 * Math.sqrt(252), eta }; }
+function jacobiEig(A, n) { // symmetric eigenvalues
+  const a = Float64Array.from(A);
+  for (let sweep = 0; sweep < 30; sweep++) { let off = 0;
+    for (let p = 0; p < n; p++) for (let q = p + 1; q < n; q++) off += a[p * n + q] ** 2;
+    if (off < 1e-10) break;
+    for (let p = 0; p < n; p++) for (let q = p + 1; q < n; q++) { const apq = a[p * n + q]; if (Math.abs(apq) < 1e-14) continue;
+      const th = (a[q * n + q] - a[p * n + p]) / (2 * apq), t = Math.sign(th || 1) / (Math.abs(th) + Math.sqrt(th * th + 1)),
+        c = 1 / Math.sqrt(t * t + 1), s = t * c;
+      for (let k = 0; k < n; k++) { const akp = a[k * n + p], akq = a[k * n + q]; a[k * n + p] = c * akp - s * akq; a[k * n + q] = s * akp + c * akq; }
+      for (let k = 0; k < n; k++) { const apk = a[p * n + k], aqk = a[q * n + k]; a[p * n + k] = c * apk - s * aqk; a[q * n + k] = s * apk + c * aqk; } } }
+  return Array.from({ length: n }, (_, i) => a[i * n + i]); }
+function corrMatrix(cols) {
+  const n = cols.length, T = cols[0].length, Z = cols.map(c => { const m = mean(c), s = sd(c) || 1; return c.map(v => (v - m) / s); });
+  const C = new Float64Array(n * n);
+  for (let i = 0; i < n; i++) for (let j = i; j < n; j++) { let s = 0; for (let t = 0; t < T; t++) s += Z[i][t] * Z[j][t]; C[i * n + j] = C[j * n + i] = s / T; }
+  return C; }
+function effectiveTrials(cols, r, cap = 260) {
+  let sample = cols; if (cols.length > cap) { sample = cols.slice(); for (let i = sample.length - 1; i > 0; i--) { const j = r.int(i + 1); [sample[i], sample[j]] = [sample[j], sample[i]]; } sample = sample.slice(0, cap); }
+  const n = sample.length, lam = jacobiEig(corrMatrix(sample), n).map(v => Math.max(v, 0)).sort((a, b) => b - a);
+  const tot = lam.reduce((s, v) => s + v, 0); let c = 0;
+  for (let k = 0; k < n; k++) { c += lam[k]; if (c / tot >= 0.95) return k + 1; } return n; }
+function pbo(cols, nb = 10) {
+  const T = cols[0].length, M = cols.length, bs = Array.from({ length: nb }, (_, b) => [Math.floor(b * T / nb), Math.floor((b + 1) * T / nb)]);
+  const combos = []; (function rec(s, cur) { if (cur.length === nb / 2) { combos.push(cur.slice()); return; } for (let i = s; i < nb; i++) { cur.push(i); rec(i + 1, cur); cur.pop(); } })(0, []);
+  // block stats per strategy
+  const S = cols.map(c => bs.map(([a, b]) => { let s = 0, q = 0; for (let t = a; t < b; t++) { s += c[t]; q += c[t] * c[t]; } return [s, q, b - a]; }));
+  let bad = 0;
+  for (const is of combos) { const inIS = new Set(is), srI = [], srO = [];
+    for (let m = 0; m < M; m++) { let a = [0, 0, 0], o = [0, 0, 0];
+      for (let b = 0; b < nb; b++) { const x = S[m][b], tgt = inIS.has(b) ? a : o; tgt[0] += x[0]; tgt[1] += x[1]; tgt[2] += x[2]; }
+      const sr = z => { const mu = z[0] / z[2]; return mu / (Math.sqrt(Math.max(z[1] / z[2] - mu * mu, 0)) + 1e-12); };
+      srI.push(sr(a)); srO.push(sr(o)); }
+    let best = 0; for (let m = 1; m < M; m++) if (srI[m] > srI[best]) best = m;
+    let rank = 1; for (let m = 0; m < M; m++) if (srO[m] < srO[best]) rank++;
+    const w = rank / (M + 1); if (Math.log(w / (1 - w)) <= 0) bad++; }
+  return bad / combos.length; }
+
+// ---------- risk desk (MineDime VaR stack) ----------
+function riskDesk(pnl, book, r) {
+  const s = Array.from(pnl).sort((a, b) => a - b), n = s.length, m = mean(pnl), v = sd(pnl);
+  const q = (arr, p) => arr[Math.max(0, Math.floor(p * arr.length))];
+  const cvar = (arr, p) => { const k = Math.max(1, Math.floor(p * arr.length)); let t = 0; for (let i = 0; i < k; i++) t += arr[i]; return t / k; };
+  const mc = []; for (let i = 0; i < 20000; i++) mc.push(pnl[r.int(n)]); mc.sort((a, b) => a - b);
+  const out = {};
+  for (const p of [0.95, 0.99]) out[p] = {
+    historical: -q(s, 1 - p) * book, parametric: -(m + nppf(1 - p) * v) * book,
+    monteCarlo: -q(mc, 1 - p) * book, cvar: -cvar(s, 1 - p) * book };
+  return out; }
+
+// ---------- the forge ----------
+function Forge(D, cfg) {
+  this.D = D; this.cfg = Object.assign({ pop: 140, gens: 14, maxDepth: 4, elite: 8, tour: 4, bps: 5, oos: 0.3,
+    cpen: 0.03, maxCorr: 0.5, hall: 8, dsrMin: 0.95, pboMax: 0.2, val: 0.2, alpha: 0.05, seed: 7 }, cfg || {});
+  this.r = RNG(this.cfg.seed); this.trials = new Map(); this.cache = new Map();
+  this.warm = 120; this.split = Math.floor(D.T * (1 - this.cfg.oos)); this.vstart = Math.floor(D.T * (1 - this.cfg.oos - this.cfg.val)); }
+Forge.prototype.score = function (node) {
+  const key = str(node); if (this.trials.has(key)) return this.trials.get(key);
+  let sig; try { sig = evaluate(node, this.D, this.cache); } catch (e) { return null; }
+  const { N } = this.D, a = this.warm * N, b = this.vstart * N; let fin = 0, s = 0, q = 0;
+  for (let k = a; k < b; k++) { const v = sig[k]; if (v === v && isFinite(v)) { fin++; s += v; q += v * v; } }
+  if (fin / (b - a) < 0.8 || q / fin - (s / fin) ** 2 < 1e-18) return null;
+  const W = weights(sig, this.D), up = pnlOf(W, this.D, this.warm, this.vstart, false, this.cfg.bps),
+    dn = pnlOf(W, this.D, this.warm, this.vstart, true, this.cfg.bps);
+  const flip = mean(dn.pnl) > mean(up.pnl), use = flip ? dn : up, sr = sharpe(use.pnl);
+  const t = { expr: key, node, flip, sr, fit: sr - this.cfg.cpen * size(node), pnl: use.pnl, to: use.to };
+  this.trials.set(key, t); return t; };
+Forge.prototype.tourn = function (pop) { let best = null; for (let k = 0; k < this.cfg.tour; k++) { const c = this.r.pick(pop); if (!best || c.fit > best.fit) best = c; } return best; };
+Forge.prototype.init = function () { this.pop = []; let guard = 0;
+  while (this.pop.length < this.cfg.pop && guard++ < this.cfg.pop * 10) { const t = this.score(grow(this.r, this.cfg.maxDepth)); if (t) this.pop.push(t); } this.gen = 0; };
+Forge.prototype.step = function () { // one generation
+  const c = this.cfg; this.cache.clear(); this.pop.sort((a, b) => b.fit - a.fit);
+  const nxt = this.pop.slice(0, c.elite); let tries = 0;
+  while (nxt.length < c.pop && tries++ < c.pop * 5) {
+    const child = this.r() < 0.5 ? crossover(this.r, this.tourn(this.pop).node, this.tourn(this.pop).node, c.maxDepth)
+      : mutate(this.r, this.tourn(this.pop).node, c.maxDepth);
+    const t = this.score(child); if (t) nxt.push(t); }
+  this.pop = nxt; this.gen++;
+  return this.pop.reduce((b, t) => t.fit > b.fit ? t : b); };
+Forge.prototype.hallOfFame = function () {
+  const ranked = [...this.trials.values()].sort((a, b) => b.fit - a.fit), hof = [];
+  const corr = (x, y) => { const mx = mean(x), my = mean(y); let s = 0, a = 0, b = 0; for (let i = 0; i < x.length; i++) { s += (x[i] - mx) * (y[i] - my); a += (x[i] - mx) ** 2; b += (y[i] - my) ** 2; } return s / Math.sqrt(a * b); };
+  for (const t of ranked) { if (t.sr <= 0) break; if (hof.every(h => Math.abs(corr(t.pnl, h.pnl)) < this.cfg.maxCorr)) hof.push(t); if (hof.length >= this.cfg.hall) break; }
+  return hof; };
+Forge.prototype.tribunal = function (hof) {
+  const all = [...this.trials.values()], cols = all.map(t => t.pnl);
+  const nEff = 2 * effectiveTrials(cols, this.r);
+  // Gate 1: Deflated Sharpe on the search stretch.
+  const verdicts = hof.map(t => { const d = deflatedSharpe(t.pnl, nEff);
+    return { t, dsr: d.dsr, bar: d.bar, eta: d.eta, dsrPass: d.dsr >= this.cfg.dsrMin }; });
+  // Gate 2: independent replication on the validation stretch, family-wise error 5% (Bonferroni).
+  const k = verdicts.filter(v => v.dsrPass).length, zCrit = nppf(1 - this.cfg.alpha / Math.max(k, 1));
+  for (const v of verdicts) {
+    const p = pnlOf(this.weightsFor(v.t), this.D, this.vstart, this.split, false, this.cfg.bps).pnl;
+    v.valSR = sharpe(p); v.valZ = mean(p) / sd(p) * Math.sqrt(p.length / autocorrInflation(p)); v.zCrit = zCrit;
+    v.rep = v.dsrPass && v.valZ >= zCrit; v.pass = v.rep; }
+  const ord = all.slice().sort((a, b) => b.fit - a.fit), M = Math.min(40, ord.length);
+  const pick = Array.from({ length: M }, (_, i) => ord[Math.floor(i * (ord.length - 1) / (M - 1))].pnl);
+  const p = pbo(pick); if (p > this.cfg.pboMax) verdicts.forEach(v => v.pass = false);
+  return { verdicts, pbo: p, nEff, tested: all.length, zCrit }; };
+Forge.prototype.weightsFor = function (t) { // signed weights for a trial, recomputed so trials stay light
+  const W = weights(evaluate(t.node, this.D, this.cache), this.D); if (t.flip) for (let k = 0; k < W.length; k++) W[k] = -W[k]; return W; };
+Forge.prototype.vault = function (trials) {
+  const D = this.D, a = this.warm, s = this.split, e = D.T - 1, per = [], Ws = [];
+  for (const t of trials) { const W = this.weightsFor(t);
+    const o = pnlOf(W, D, s, e, false, this.cfg.bps); per.push({ expr: t.expr, oos: sharpe(o.pnl), pnl: o.pnl });
+    const sc = 1 / (sd(t.pnl) + 1e-12); Ws.push(W.map(v => v * sc)); }
+  if (!Ws.length) return { per, ens: null };
+  const W = new Float64Array(Ws[0].length); for (const w of Ws) for (let k = 0; k < W.length; k++) W[k] += w[k];
+  for (let t = 0; t < D.T; t++) { let g = 0; for (let i = 0; i < D.N; i++) g += Math.abs(W[t * D.N + i]); if (g > 0) for (let i = 0; i < D.N; i++) W[t * D.N + i] /= g; }
+  const is = pnlOf(W, D, a, s, false, this.cfg.bps), oos = pnlOf(W, D, s, e, false, this.cfg.bps);
+  return { per, ens: { is: is.pnl, oos: oos.pnl, srIS: sharpe(is.pnl), srOOS: sharpe(oos.pnl),
+    ann: mean(oos.pnl) * 252, dd: maxDD(oos.pnl), to: oos.to, W } }; };
+Forge.prototype.oracle = function () { // the answer key, only knowable in simulation
+  const D = this.D, { T, N } = D, sig = P(T, N), iv = volScale(D);
+  const z = ew(D.returns, iv, (r, v) => r * v);
+  const s5 = OPS.ts_sum[2](z, T, N, 5), s60 = OPS.ts_sum[2](z, T, N, 60);
+  const a = OPS.cs_zscore[2](s5, T, N), b = OPS.cs_zscore[2](ew(s60, s5, (x, y) => x - y), T, N);
+  for (let k = 0; k < sig.length; k++) sig[k] = -0.05 * a[k] + 0.03 * b[k];
+  return sharpe(pnlOf(weights(sig, D), D, this.split, T - 1, false, this.cfg.bps).pnl); };
+
+root.AlphaLab = { UNIVERSE, simulate, Forge, riskDesk, corrMatrix, sharpe, mean, sd, RNG, str };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(function () {
+'use strict';
+const L = window.AlphaLab, U = L.UNIVERSE, N = U.length;
+const $ = id => document.getElementById(id);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const MD = window.MD = {};
+MD.$ = $; MD.css = css; MD.RM = RM;
+// ---------- formatting ----------
+const px = p => p >= 1000 ? p.toLocaleString('en-US', { maximumFractionDigits: 0 }) : p >= 100 ? p.toFixed(1) : p >= 1 ? p.toFixed(2) : p >= 0.01 ? p.toFixed(4) : p.toPrecision(3);
+const sg = (v, d = 2) => (v >= 0 ? '+' : '') + v.toFixed(d);
+const pc = (v, d = 2) => sg(v * 100, d) + '%';
+const usd = v => (v < 0 ? '−$' : '$') + Math.abs(Math.round(v)).toLocaleString('en-US');
+Object.assign(MD, { px, sg, pc, usd });
+// ---------- canvas ----------
+function cv(id) { const c = typeof id === 'string' ? $(id) : id, dpr = window.devicePixelRatio || 1, w = c.clientWidth || 300, h = +c.getAttribute('height') || c.clientHeight;
+  if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
+  c.style.height = h + 'px'; const x = c.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, w, h);
+  x.font = '11px "IBM Plex Mono", monospace'; return [x, w, h]; }
+function spark(c, d, col) { const dpr = window.devicePixelRatio || 1, w = 90, h = 22; c.width = w * dpr; c.height = h * dpr; const x = c.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const lo = Math.min(...d), hi = Math.max(...d); x.strokeStyle = col; x.lineWidth = 1.3; x.beginPath();
+  d.forEach((v, i) => { const X = i / (d.length - 1) * (w - 2) + 1, Y = h - 2 - (v - lo) / ((hi - lo) || 1) * (h - 4); i ? x.lineTo(X, Y) : x.moveTo(X, Y); }); x.stroke(); }
+/* lineChart: series [{d, col, w, dash, fill}], opts {yfmt, xlab(i), bands:[{a,b,alpha,label}], zero, pad} */
+function lineChart(id, series, o = {}) {
+  const [x, w, h] = cv(id), all = series.flatMap(s => s.d.filter(v => v === v));
+  if (!all.length) return; let lo = Math.min(...all), hi = Math.max(...all); if (o.zero) { lo = Math.min(lo, 0); hi = Math.max(hi, 0); }
+  const pr = (hi - lo) || 1; lo -= pr * .06; hi += pr * .06;
+  const pl = o.pl || 58, pb = 22, n = Math.max(...series.map(s => s.d.length)), X = i => pl + i / (n - 1) * (w - pl - 10), Y = v => 8 + (hi - v) / (hi - lo) * (h - pb - 12);
+  x.strokeStyle = css('--line'); x.fillStyle = css('--dim'); x.lineWidth = 1;
+  for (let k = 0; k <= 4; k++) { const v = lo + (hi - lo) * k / 4, y = Y(v); x.globalAlpha = .6; x.beginPath(); x.moveTo(pl, y); x.lineTo(w - 10, y); x.stroke(); x.globalAlpha = 1; x.fillText((o.yfmt || px)(v), 4, y + 4); }
+  (o.bands || []).forEach(b => { x.fillStyle = css('--line'); x.globalAlpha = b.alpha || .4; x.fillRect(X(b.a), 8, X(b.b) - X(b.a), h - pb - 12); x.globalAlpha = 1; if (b.label) { x.fillStyle = css('--dim'); x.fillText(b.label, X(b.a) + 5, h - 6); } });
+  if (o.zero) { x.strokeStyle = css('--dim'); x.setLineDash([3, 3]); x.beginPath(); x.moveTo(pl, Y(0)); x.lineTo(w - 10, Y(0)); x.stroke(); x.setLineDash([]); }
+  if (o.xlab) { x.fillStyle = css('--dim'); for (let k = 0; k <= 5; k++) { const i = Math.round(k / 5 * (n - 1)), t = o.xlab(i); if (t) x.fillText(t, Math.min(X(i) - 14, w - 60), h - 6); } }
+  series.forEach(s => { const col = s.col; x.strokeStyle = col; x.lineWidth = s.w || 1.6; x.setLineDash(s.dash || []); x.beginPath(); let st = false;
+    s.d.forEach((v, i) => { if (v !== v) { st = false; return; } st ? x.lineTo(X(i), Y(v)) : x.moveTo(X(i), Y(v)); st = true; }); x.stroke(); x.setLineDash([]);
+    if (s.fill) { x.lineTo(X(s.d.length - 1), Y(lo)); x.lineTo(X(0), Y(lo)); x.closePath(); const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, col + '55'); g.addColorStop(1, col + '00'); x.fillStyle = g; x.fill(); }
+    if (s.dot) { const i = s.d.length - 1; x.fillStyle = col; x.beginPath(); x.arc(X(i), Y(s.d[i]), 3.5, 0, 7); x.fill(); } });
+  return { X, Y }; }
+Object.assign(MD, { cv, spark, lineChart });
+// ---------- market data model ----------
+const D = MD.D = L.simulate(2520, 2026, 1), T = D.T, RNG = L.RNG(77);
+MD.rng = RNG;
+const hist = MD.hist = U.map((u, i) => { const a = new Float64Array(T); for (let t = 0; t < T; t++) a[t] = D.close[t * N + i]; return a; });
+(() => { const w = U.findIndex(u => u[0] === 'WTI'), br = U.findIndex(u => u[0] === 'BRENT'), r2 = L.RNG(55); let s = 0; const k = U[br][3] / U[w][3], sp = [];
+  for (let t = 0; t < T; t++) { s = .985 * s + .006 * r2.normal(); sp.push(s); } const endAdj = sp[T - 1];
+  for (let t = 0; t < T; t++) hist[br][t] = hist[w][t] * k * Math.exp(sp[t] - endAdj); })();
+const vol = MD.vol = hist.map(h => { let s = 0, q = 0; for (let t = T - 60; t < T; t++) { const r = Math.log(h[t] / h[t - 1]); s += r; q += r * r; } return Math.sqrt(q / 60 - (s / 60) ** 2); });
+const prev = MD.prev = hist.map(h => h[T - 1]);
+const last = MD.last = prev.map((p, i) => p * Math.exp(vol[i] * 0.7 * RNG.normal()));
+const openPx = MD.open = last.slice();
+MD.series = i => { const a = Array.from(hist[i]); a.push(last[i]); return a; };
+MD.chg = (i, back) => last[i] / hist[i][T - back] - 1;
+MD.day = i => last[i] / prev[i] - 1;
+const listeners = []; MD.onTick = f => listeners.push(f);
+const alerted = new Set(); let lastAlert = Date.now() + 20000;
+function tick() {
+  const moved = [];
+  for (let i = 0; i < N; i++) { if (RNG() < .55) { const old = last[i]; last[i] *= Math.exp(vol[i] * 0.09 * RNG.t5()); moved.push([i, last[i] > old]);
+      const d = MD.day(i); if (Math.abs(d) > .04 && !alerted.has(i) && Date.now() - lastAlert > 25000) { alerted.add(i); lastAlert = Date.now(); MD.toast(`Price alert: ${U[i][0]} ${pc(d, 1)}`, `${U[i][1]} has moved more than 4% since yesterday's close.`); } } }
+  listeners.forEach(f => f(moved)); }
+MD.tick = tick;
+// digital commodity reference data (MineDime March 2026 set)
+MD.dmeta = { BTC: ['Layer 1', 1.71e12, 38.2e9], ETH: ['Layer 1', 411e9, 18.6e9], SOL: ['Layer 1', 66.2e9, 4.1e9], XRP: ['Payment', 134e9, 3.8e9], ADA: ['Layer 1', 25.4e9, 890e6], AVAX: ['Layer 1', 15.8e9, 720e6], DOT: ['Layer 0', 10.2e9, 410e6], LINK: ['Oracle', 12.1e9, 680e6], LTC: ['Payment', 7.4e9, 520e6], DOGE: ['Meme / Payment', 26.8e9, 2.1e9], SHIB: ['Meme', 14.6e9, 890e6], HBAR: ['DAG', 10.8e9, 340e6], XLM: ['Payment', 3.9e9, 180e6], APT: ['Layer 1', 4.8e9, 220e6], XTZ: ['Layer 1', 1.1e9, 42e6], BCH: ['Payment', 6.8e9, 310e6] };
+const big = v => v >= 1e12 ? (v / 1e12).toFixed(2) + 'T' : v >= 1e9 ? (v / 1e9).toFixed(1) + 'B' : (v / 1e6).toFixed(0) + 'M';
+MD.big = big;
+
+// ---------- shell: tabs ----------
+const TABS = [['mkt', 'MKT', 'Markets'], ['alpha', 'ALPHA', 'Alpha Lab', 1], ['trib', 'TRIB', 'Tribunal', 1], ['risk', 'RISK', 'Risk desk'], ['dgtl', 'DGTL', 'Digital'],
+  ['cot', 'COT', 'Positioning'], ['crack', 'CRACK', 'Cracks'], ['curve', 'CURVE', 'Curves'], ['ship', 'SHIP', 'Maritime'], ['batt', 'BATT', 'Battery'], ['ops', 'OPS', 'Mine ops'], ['geo', 'GEO', 'Geo risk'], ['ai', 'AI', 'Analyst', 1]];
+const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '\\'];
+MD.renderers = {}; MD.active = null;
+$('tabs').innerHTML = TABS.map((t, k) => `<button role="tab" type="button" id="t-${t[0]}" aria-controls="p-${t[0]}" aria-selected="false" class="${t[3] ? 'new' : ''}"><b>${t[1]}</b><small>${KEYS[k]} · ${t[2]}</small></button>`).join('');
+function show(id) { if (!TABS.some(t => t[0] === id)) return; MD.active = id;
+  TABS.forEach(t => { const on = t[0] === id; $('t-' + t[0]).setAttribute('aria-selected', on); $('p-' + t[0]).classList.toggle('on', on); });
+  $('t-' + id).scrollIntoView({ block: 'nearest', inline: 'nearest' }); if (MD.renderers[id]) MD.renderers[id](); }
+MD.show = show;
+TABS.forEach(t => $('t-' + t[0]).onclick = () => show(t[0]));
+document.addEventListener('click', e => { const g = e.target.closest('[data-go]'); if (g) show(g.dataset.go); });
+document.addEventListener('keydown', e => {
+  const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+  if (e.key === '/' && !typing) { e.preventDefault(); $('cmd').focus(); return; }
+  if (!typing && !e.metaKey && !e.ctrlKey && !e.altKey) { const k = KEYS.indexOf(e.key); if (k >= 0) show(TABS[k][0]); } });
+// ---------- command line ----------
+const CMDS = TABS.map(t => [t[1], t[2], () => show(t[0])]).concat(U.map((u, i) => [u[0], u[1], () => { show('mkt'); MD.pick && MD.pick(i); }]))
+  .concat([['HELP', 'List functions', () => { $('cmd').value = ''; MD.toast('Functions', TABS.map(t => t[1]).join('  ') + '  or any ticker. Keys 1 to 9, 0, -, = and \\ switch tabs. Press / to focus the command line.'); }]]);
+let sIdx = 0, sList = [];
+function sugg() { const q = $('cmd').value.trim().toUpperCase(); sList = q ? CMDS.filter(c => c[0].startsWith(q) || c[1].toUpperCase().includes(q)).slice(0, 8) : [];
+  sIdx = 0; $('sugg').style.display = sList.length ? 'block' : 'none';
+  $('sugg').innerHTML = sList.map((c, k) => `<div role="option" data-k="${k}" class="${k === sIdx ? 'on' : ''}"><b>${c[0]}</b><span>${c[1]}</span></div>`).join(''); }
+function run(k) { const c = sList[k]; if (!c) { MD.toast('Unknown function', `Type HELP to see what's available.`); return; } c[2](); $('cmd').value = ''; sugg(); $('cmd').blur(); }
+$('cmd').oninput = sugg;
+$('cmd').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); if (!sList.length) sugg(); run(sIdx); }
+  else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); sIdx = (sIdx + (e.key === 'ArrowDown' ? 1 : -1) + sList.length) % Math.max(sList.length, 1);
+    [...$('sugg').children].forEach((d, k) => d.classList.toggle('on', k === sIdx)); }
+  else if (e.key === 'Escape') { $('cmd').value = ''; sugg(); $('cmd').blur(); } };
+$('sugg').onmousedown = e => { const d = e.target.closest('[data-k]'); if (d) { e.preventDefault(); run(+d.dataset.k); } };
+$('cmd').onblur = () => setTimeout(() => $('sugg').style.display = 'none', 120);
+// ---------- clock & sessions ----------
+const SESS = [['NYMEX', 'CME Globex energy', d => d.dow >= 1 && d.dow <= 5 ? !(d.h === 22) : (d.dow === 0 && d.h >= 23)],
+  ['COMEX', 'Metals', d => d.dow >= 1 && d.dow <= 5 ? !(d.h === 22) : (d.dow === 0 && d.h >= 23)],
+  ['ICE', 'Brent', d => d.dow >= 1 && d.dow <= 5 && (d.h >= 1 && d.h < 23)],
+  ['LME', 'Base metals', d => d.dow >= 1 && d.dow <= 5 && d.h >= 1 && d.h < 19],
+  ['CBOT', 'Grains', d => d.dow >= 1 && d.dow <= 5 && ((d.h >= 1 && d.h < 13) || (d.h >= 14 && d.h < 19))],
+  ['SGX', 'Asia', d => d.dow >= 1 && d.dow <= 5 && d.h >= 0 && d.h < 21],
+  ['CRYPTO', 'Always on', () => true]];
+function clock() { const n = new Date(), d = { dow: n.getUTCDay(), h: n.getUTCHours() };
+  $('clk').textContent = n.toISOString().slice(11, 19);
+  $('clkd').textContent = 'UTC ' + n.toUTCString().slice(0, 11);
+  $('sess').innerHTML = `<span style="border:0;padding-left:0"><i class="dot"></i>Live simulation</span>` + SESS.map(s => { const o = s[2](d); return `<span class="${o ? 'open' : ''}" title="${s[1]}, approximate hours">${s[0]} ${o ? 'open' : 'closed'}</span>`; }).join('')
+    + `<span class="sp" style="border:0"></span><span style="border:0">Frankfurt ${n.toLocaleTimeString('en-GB', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' })}  New York ${n.toLocaleTimeString('en-GB', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit' })}  Singapore ${n.toLocaleTimeString('en-GB', { timeZone: 'Asia/Singapore', hour: '2-digit', minute: '2-digit' })}</span>`; }
+// ---------- marquees ----------
+function pxMarquee() { const html = U.map((u, i) => { const d = MD.day(i); return `<span><b>${u[0]}</b>${px(last[i])} <em class="${d >= 0 ? 'up' : 'dn'}" style="font-style:normal">${pc(d)}</em></span>`; }).join('');
+  $('mqPx').innerHTML = html + html; }
+MD.news = [];
+MD.pushNews = (tag, txt) => { MD.news.unshift([tag, txt]); MD.news = MD.news.slice(0, 18); const h = MD.news.map(n => `<span><i>${n[0]}</i>${n[1]}</span>`).join(''); $('mqNw').innerHTML = h + h; };
+// ---------- toasts ----------
+MD.toast = (title, body) => { const t = document.createElement('div'); t.className = 'toast'; t.innerHTML = `<b></b><span></span>`; t.firstChild.textContent = title; t.lastChild.textContent = body;
+  $('toasts').prepend(t); while ($('toasts').children.length > 3) $('toasts').lastChild.remove(); setTimeout(() => t.remove(), 7000); };
+// ---------- theme & scanlines ----------
+$('themeBtn').onclick = () => { const r = document.documentElement, dark = matchMedia('(prefers-color-scheme: dark)').matches;
+  const cur = r.dataset.theme || (dark ? 'dark' : 'light'); r.dataset.theme = cur === 'dark' ? 'light' : 'dark'; MD.active && MD.renderers[MD.active] && MD.renderers[MD.active](); };
+$('scanBtn').onclick = () => document.body.classList.toggle('noscan');
+addEventListener('resize', () => { clearTimeout(MD._rz); MD._rz = setTimeout(() => MD.active && MD.renderers[MD.active] && MD.renderers[MD.active](), 120); });
+// ---------- boot ----------
+MD.boot = function (done) {
+  const lines = ['MineDime terminal v4.0 · commodity + digital commodity intelligence', 'Linking 26 price feeds (simulated) ........ ok', 'Forward curves, 6 markets ................ ok',
+    'Maritime traffic mesh, 9 chokepoints ..... ok', 'Mine-site weather and seismic, 10 sites .. ok', 'QuantForge engine + overfitting tribunal .. armed', 'Analyst line to Claude ................... standby'];
+  const b = $('boot'); let k = 0, fin = false;
+  const end = () => { if (fin) return; fin = true; b.classList.add('gone'); setTimeout(() => b.remove(), 600); done(); };
+  if (RM) { end(); return; }
+  b.onclick = end; addEventListener('keydown', end, { once: true });
+  const step = () => { if (fin) return; if (k < lines.length) { const p = document.createElement('div'); p.textContent = lines[k++]; $('bootLines').appendChild(p); setTimeout(step, 240); } else setTimeout(end, 500); };
+  setTimeout(step, 250); };
+MD.startShell = function () { clock(); setInterval(clock, 1000); pxMarquee(); setInterval(pxMarquee, 6000); setInterval(tick, 1400); };
+})();
+
+(function () {
+'use strict';
+const MD = window.MD, L = window.AlphaLab, U = L.UNIVERSE, N = U.length, { $, css, px, pc, sg, usd, lineChart, spark } = MD;
+const T = MD.D.T, R = L.RNG(314);
+const col = v => v >= 0 ? css('--phos') : css('--red');
+const monthLab = off => { const d = new Date(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() + off); return d.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' }) + ' ' + String(d.getUTCFullYear()).slice(2); };
+const dayLab = back => { const d = new Date(Date.now() - back * 86400000 * 7 / 5); return d.toLocaleString('en-US', { month: 'short', year: '2-digit', timeZone: 'UTC' }); };
+
+// ================= MARKETS =================
+const SECT = [['all', 'All 26'], ['energy', 'Energy'], ['metals', 'Metals'], ['ags', 'Grains'], ['crypto', 'Digital']];
+let sect = 'all', sel = 0, rng = 252, sma = true, bb = false;
+$('secF').innerHTML = SECT.map(s => `<button class="chip" type="button" data-s="${s[0]}" aria-pressed="${s[0] === sect}">${s[1]}</button>`).join('');
+$('secF').onclick = e => { const b = e.target.closest('[data-s]'); if (!b) return; sect = b.dataset.s; [...$('secF').children].forEach(c => c.setAttribute('aria-pressed', c === b)); buildQuotes(); };
+const RNGS = [['1M', 21], ['3M', 63], ['1Y', 252], ['5Y', 1260], ['10Y', 2520]];
+$('rngF').innerHTML = RNGS.map(r => `<button class="chip" type="button" data-r="${r[1]}" aria-pressed="${r[1] === rng}">${r[0]}</button>`).join('');
+$('rngF').onclick = e => { const b = e.target.closest('[data-r]'); if (!b) return; rng = +b.dataset.r; [...$('rngF').children].forEach(c => c.setAttribute('aria-pressed', c === b)); chart(); };
+$('smaB').onclick = () => { sma = !sma; $('smaB').setAttribute('aria-pressed', sma); chart(); };
+$('bbB').onclick = () => { bb = !bb; $('bbB').setAttribute('aria-pressed', bb); chart(); };
+const rows = () => U.map((u, i) => i).filter(i => sect === 'all' || U[i][2] === sect);
+function buildQuotes() {
+  const ids = rows(); $('qCount').textContent = ids.length + ' assets';
+  $('qt').tBodies[0].innerHTML = ids.map(i => `<tr class="click${i === sel ? ' sel' : ''}" data-i="${i}" tabindex="0"><td class="l"><b>${U[i][0]}</b></td><td class="l">${U[i][1]}</td><td id="q-l-${i}"></td><td id="q-d-${i}"></td><td class="${MD.chg(i, 21) >= 0 ? 'up' : 'dn'}">${pc(MD.chg(i, 21), 1)}</td><td class="${MD.chg(i, 252) >= 0 ? 'up' : 'dn'}">${pc(MD.chg(i, 252), 1)}</td><td>${(MD.vol[i] * Math.sqrt(252) * 100).toFixed(0)}%</td><td><canvas class="sp" id="q-s-${i}"></canvas></td></tr>`).join('');
+  ids.forEach(i => { quote(i); spark($('q-s-' + i), MD.series(i).slice(-60), col(MD.chg(i, 60))); }); }
+function quote(i, flash) { const l = $('q-l-' + i), d = $('q-d-' + i); if (!l) return; const dy = MD.day(i);
+  l.textContent = px(MD.last[i]); d.textContent = pc(dy); d.className = dy >= 0 ? 'up' : 'dn';
+  if (flash !== undefined) { l.classList.remove('flash-up', 'flash-dn'); void l.offsetWidth; l.classList.add(flash ? 'flash-up' : 'flash-dn'); } }
+$('qt').onclick = e => { const r = e.target.closest('tr[data-i]'); if (r) MD.pick(+r.dataset.i); };
+$('qt').onkeydown = e => { const r = e.target.closest('tr[data-i]'); if (r && e.key === 'Enter') MD.pick(+r.dataset.i); };
+MD.pick = i => { sel = i; [...$('qt').tBodies[0].rows].forEach(r => r.classList.toggle('sel', +r.dataset.i === i)); chart(); };
+function smaOf(a, n) { const o = []; let s = 0; for (let k = 0; k < a.length; k++) { s += a[k]; if (k >= n) s -= a[k - n]; o.push(k >= n - 1 ? s / n : NaN); } return o; }
+function chart() { if (MD.active !== 'mkt') return;
+  const all = MD.series(sel), n = Math.min(rng, all.length - 1), d = all.slice(-n - 60), show = d.slice(60), up = show[show.length - 1] >= show[0];
+  const s = [{ d: show, col: up ? css('--phos') : css('--red'), w: 1.8, fill: rng <= 252, dot: true }];
+  if (sma) { s.push({ d: smaOf(d, 20).slice(60), col: css('--amber'), w: 1.1 }); s.push({ d: smaOf(d, 50).slice(60), col: css('--cyan'), w: 1.1 }); }
+  if (bb) { const m = smaOf(d, 20), sd = d.map((v, k) => { if (k < 19) return NaN; let q = 0; for (let j = k - 19; j <= k; j++) q += (d[j] - m[k]) ** 2; return Math.sqrt(q / 20); });
+    s.push({ d: m.map((v, k) => v + 2 * sd[k]).slice(60), col: css('--dim'), w: 1, dash: [4, 3] }); s.push({ d: m.map((v, k) => v - 2 * sd[k]).slice(60), col: css('--dim'), w: 1, dash: [4, 3] }); }
+  lineChart('chMain', s, { xlab: k => dayLab(show.length - 1 - k) });
+  $('chT').textContent = `${U[sel][0]}  ${U[sel][1]}  ${px(MD.last[sel])}`;
+  const hi = Math.max(...show), lo = Math.min(...show);
+  $('chStats').innerHTML = [['Range high', px(hi)], ['Range low', px(lo)], ['Range return', pc(show[show.length - 1] / show[0] - 1, 1)]].map(k => `<div class="kpi"><b style="font-size:17px">${k[1]}</b><span>${k[0]}</span></div>`).join(''); }
+function tiles() { $('tiles').innerHTML = U.map((u, i) => { const d = MD.day(i), a = Math.min(1, Math.abs(d) / 0.04);
+  const c = d >= 0 ? `rgba(0,${120 + 100 * a | 0},${70 + 30 * a | 0},${.35 + .6 * a})` : `rgba(${150 + 100 * a | 0},40,40,${.35 + .6 * a})`;
+  return `<button class="tile" type="button" data-i="${i}" style="background:${c}"><b>${u[0]}</b><span>${pc(d)}</span></button>`; }).join(''); }
+$('tiles').onclick = e => { const b = e.target.closest('[data-i]'); if (b) MD.pick(+b.dataset.i); };
+function mktK() { const up = U.filter((u, i) => MD.day(i) >= 0).length; let best = 0, worst = 0;
+  U.forEach((u, i) => { if (MD.day(i) > MD.day(best)) best = i; if (MD.day(i) < MD.day(worst)) worst = i; });
+  const brent = U.findIndex(u => u[0] === 'BRENT'), wti = U.findIndex(u => u[0] === 'WTI');
+  $('mktK').innerHTML = [[`${up}/${N}`, 'Assets up on the day'], [`${U[best][0]} ${pc(MD.day(best), 1)}`, 'Top mover'], [`${U[worst][0]} ${pc(MD.day(worst), 1)}`, 'Bottom mover'], [`$${(MD.last[brent] - MD.last[wti]).toFixed(2)}`, 'Brent–WTI spread']]
+    .map(k => `<div class="pn kpi"><b>${k[0]}</b><span>${k[1]}</span></div>`).join(''); }
+MD.renderers.mkt = () => { buildQuotes(); tiles(); mktK(); chart(); };
+let tcount = 0;
+MD.onTick(moved => { if (MD.active === 'mkt') { moved.forEach(([i, u]) => quote(i, u)); if (++tcount % 4 === 0) { tiles(); mktK(); } if (tcount % 3 === 0) chart(); }
+  if (MD.active === 'dgtl') moved.forEach(([i, u]) => dq(i, u)); });
+
+// ================= DIGITAL =================
+const DG = U.map((u, i) => i).filter(i => U[i][2] === 'crypto');
+function dq(i, f) { const l = $('d-l-' + i), d = $('d-d-' + i); if (!l) return; const dy = MD.day(i); l.textContent = '$' + px(MD.last[i]); d.textContent = pc(dy); d.className = dy >= 0 ? 'up' : 'dn';
+  if (f !== undefined) { l.classList.remove('flash-up', 'flash-dn'); void l.offsetWidth; l.classList.add(f ? 'flash-up' : 'flash-dn'); } }
+MD.renderers.dgtl = () => {
+  $('dgT').tBodies[0].innerHTML = DG.map(i => { const m = MD.dmeta[U[i][0]]; return `<tr class="click" data-i="${i}"><td class="l"><b>${U[i][0]}</b></td><td class="l">${U[i][1]}</td><td class="l"><span class="badge">${m[0]}</span></td><td id="d-l-${i}"></td><td id="d-d-${i}"></td><td>$${MD.big(m[1] * MD.last[i] / U[i][3])}</td><td>$${MD.big(m[2])}</td><td><canvas class="sp" id="d-s-${i}"></canvas></td></tr>`; }).join('');
+  DG.forEach(i => { dq(i); spark($('d-s-' + i), MD.series(i).slice(-30), col(MD.chg(i, 30))); });
+  const cap = DG.reduce((s, i) => s + MD.dmeta[U[i][0]][1] * MD.last[i] / U[i][3], 0), g = DG.filter(i => MD.day(i) >= 0).length, btc = MD.dmeta.BTC[1] * MD.last[DG[0]] / U[DG[0]][3];
+  $('dgK').innerHTML = [['16', 'Assets tracked'], ['$' + MD.big(cap), 'Total market cap'], [`${g} of 16`, 'Up on the day'], [(btc / cap * 100).toFixed(1) + '%', 'Bitcoin dominance']].map(k => `<div class="pn kpi"><b>${k[0]}</b><span>${k[1]}</span></div>`).join(''); };
+$('dgT').onclick = e => { const r = e.target.closest('tr[data-i]'); if (r) { MD.show('mkt'); MD.pick(+r.dataset.i); } };
+
+// ================= COT =================
+const PHYS = U.map((u, i) => i).filter(i => U[i][2] !== 'crypto');
+MD.cot = PHYS.map(i => { const oi = [620e3, 480e3, 1.3e6, 520e3, 150e3, 80e3, 240e3, 30e3, 410e3, 1.5e6][PHYS.indexOf(i)] || 200e3;
+  const pct = Math.round(100 * R()), net = Math.round(oi * (pct / 100 - .5) * .5 + oi * .02 * R.normal()), wk = Math.round(oi * .03 * R.normal());
+  return { i, sym: U[i][0], name: U[i][1], net, wk, pct, oi }; });
+MD.renderers.cot = () => { const mx = Math.max(...MD.cot.map(c => Math.abs(c.net)));
+  $('cotT').tBodies[0].innerHTML = MD.cot.map(c => { const w = Math.abs(c.net) / mx * 50, sig = c.pct >= 90 ? ['Crowded long', 'dn'] : c.pct <= 10 ? ['Crowded short', 'up'] : c.pct >= 75 ? ['Leaning long', 'amb'] : c.pct <= 25 ? ['Leaning short', 'amb'] : ['Neutral', 'dim'];
+    return `<tr><td class="l"><b>${c.sym}</b> ${c.name}</td><td class="l"><div class="bar"><i style="left:50%;width:1px;background:var(--dim)"></i><i style="${c.net >= 0 ? 'left:50%' : `left:${50 - w}%`};width:${w}%;background:${c.net >= 0 ? 'var(--phos)' : 'var(--red)'}"></i></div></td>
+    <td class="${c.net >= 0 ? 'up' : 'dn'}">${c.net.toLocaleString('en-US')}</td><td class="${c.wk >= 0 ? 'up' : 'dn'}">${(c.wk >= 0 ? '+' : '') + c.wk.toLocaleString('en-US')}</td><td>${c.pct}</td><td class="l ${sig[1]}">${sig[0]}</td></tr>`; }).join(''); };
+
+// ================= CRACKS =================
+const WTI = 0, crack = (() => { const w = MD.series(WTI), n = w.length, rb = [], ho = []; let a = 0, b = 0;
+  for (let t = 0; t < n; t++) { a = .97 * a + .02 * R.normal(); b = .97 * b + .02 * R.normal(); const season = .08 * Math.sin(2 * Math.PI * (t % 252) / 252 - .5);
+    rb.push(w[t] / 42 * (1.28 + season + a)); ho.push(w[t] / 42 * (1.38 - season * .4 + b)); }
+  return { w, rb, ho, c321: w.map((v, t) => (2 * rb[t] * 42 + ho[t] * 42) / 3 - v), gas: w.map((v, t) => rb[t] * 42 - v), dsl: w.map((v, t) => ho[t] * 42 - v) }; })();
+MD.crack = crack; let crN = 252;
+$('crR').innerHTML = [['3M', 63], ['1Y', 252], ['3Y', 756]].map(r => `<button class="chip" type="button" data-r="${r[1]}" aria-pressed="${r[1] === crN}">${r[0]}</button>`).join('');
+$('crR').onclick = e => { const b = e.target.closest('[data-r]'); if (!b) return; crN = +b.dataset.r; [...$('crR').children].forEach(c => c.setAttribute('aria-pressed', c === b)); MD.renderers.crack(); };
+MD.renderers.crack = () => { const sl = a => a.slice(-crN), c = crack, n = c.c321.length, yr = c.c321.slice(-252), now = c.c321[n - 1];
+  const pctl = Math.round(100 * yr.filter(v => v < now).length / yr.length);
+  $('crK').innerHTML = [['$' + now.toFixed(2), '3-2-1 crack now'], ['$' + c.gas[n - 1].toFixed(2), 'Gasoline crack'], ['$' + c.dsl[n - 1].toFixed(2), 'Diesel crack'], [pctl + 'th', '3-2-1 one-year percentile']].map(k => `<div class="pn kpi"><b>${k[0]}</b><span>${k[1]}</span></div>`).join('');
+  lineChart('crC', [{ d: sl(c.c321), col: css('--phos'), w: 2 }, { d: sl(c.gas), col: css('--amber'), w: 1.2 }, { d: sl(c.dsl), col: css('--cyan'), w: 1.2 }], { yfmt: v => '$' + v.toFixed(0), xlab: k => dayLab(crN - 1 - k) });
+  const cv = $('crC'), x = cv.getContext('2d'); x.font = '11px "IBM Plex Mono",monospace'; [['3-2-1', '--phos'], ['Gasoline', '--amber'], ['Diesel', '--cyan']].forEach((l, k) => { x.fillStyle = css(l[1]); x.fillText('— ' + l[0], 70 + k * 100, 20); }); };
+
+// ================= CURVES =================
+const CV = [['WTI', 'back', 0], ['BRENT', 'back', 1], ['NG', 'season', 2], ['XAU', 'carry', 3], ['HG', 'flat', 6], ['ZC', 'season2', 9]];
+let cvSel = 'WTI';
+$('cvC').innerHTML = CV.map(c => `<button class="chip" type="button" data-c="${c[0]}" aria-pressed="${c[0] === cvSel}">${c[0]}</button>`).join('');
+$('cvC').onclick = e => { const b = e.target.closest('[data-c]'); if (!b) return; cvSel = b.dataset.c; [...$('cvC').children].forEach(c => c.setAttribute('aria-pressed', c === b)); MD.renderers.curve(); };
+function curveOf(sym, spot, tilt = 1) { const shape = CV.find(c => c[0] === sym)[1], m0 = new Date().getUTCMonth(), out = [];
+  for (let m = 1; m <= 24; m++) { const mon = (m0 + m) % 12; let f;
+    if (shape === 'back') f = spot * Math.exp(-0.055 * tilt * m / 12 * (1 - m / 60));
+    else if (shape === 'season') f = spot * (1.06 + 0.03 * tilt * m / 12) * (1 + .22 * tilt * Math.max(0, Math.cos(2 * Math.PI * (mon - 0.5) / 12)));
+    else if (shape === 'carry') f = spot * Math.exp(0.043 * (2 - tilt) * m / 12);
+    else if (shape === 'season2') f = spot * (1 + .012 * m / 12 + .035 * Math.sin(2 * Math.PI * (mon - 4) / 12));
+    else f = spot * (1 + .004 * m / 12);
+    out.push(f); } return out; }
+MD.curveOf = sym => { const i = U.findIndex(u => u[0] === sym); return { now: curveOf(sym, MD.last[i]), ago: curveOf(sym, MD.hist[i][T - 21], 0.7) }; };
+MD.renderers.curve = () => { const { now, ago } = MD.curveOf(cvSel), i = U.findIndex(u => u[0] === cvSel);
+  $('cvT').innerHTML = `${cvSel} ${U[i][1]} <span>next 24 contract months</span>`;
+  lineChart('cvCan', [{ d: ago, col: css('--dim'), w: 1.3, dash: [5, 4] }, { d: now, col: css('--phos'), w: 2.2, dot: true }], { xlab: k => monthLab(k + 1) });
+  const x = $('cvCan').getContext('2d'); x.font = '11px "IBM Plex Mono",monospace'; x.fillStyle = css('--phos'); x.fillText('— today', 70, 20); x.fillStyle = css('--dim'); x.fillText('- - one month ago', 150, 20);
+  const sp = now[11] - now[0], back = sp < 0, roll = (now[0] / now[11] - 1) * 100;
+  $('cvS').innerHTML = `<div class="g g2" style="margin-bottom:10px"><div class="kpi"><b class="${back ? 'up' : 'amb'}">${back ? 'Backwardation' : 'Contango'}</b><span>Curve shape, front vs 12th month</span></div><div class="kpi"><b>${sg(roll, 1)}%</b><span>Annual roll yield for a long holder</span></div></div>
+  <table><thead><tr><th class="l">Month</th><th>Today</th><th>1M ago</th><th>Change</th></tr></thead><tbody>${[0, 1, 2, 5, 8, 11, 17, 23].map(k => `<tr><td class="l">${monthLab(k + 1)}</td><td>${px(now[k])}</td><td class="dim">${px(ago[k])}</td><td class="${now[k] >= ago[k] ? 'up' : 'dn'}">${pc(now[k] / ago[k] - 1, 1)}</td></tr>`).join('')}</tbody></table>
+  <p class="note">${back ? 'Nearby barrels trade at a premium to later ones: the market is paying for prompt supply. Long holders earn positive roll.' : 'Later contracts are priced above the front, covering storage and financing. Long holders pay to roll.'}</p>`; };
+})();
+
+(function () {
+'use strict';
+const MD = window.MD, L = window.AlphaLab, U = L.UNIVERSE, { $, css, px, pc, lineChart, cv } = MD;
+const R = L.RNG(2718), nowT = () => new Date().toISOString().slice(11, 16);
+
+// ================= MARITIME =================
+const LAND = [
+ [[-168,66],[-162,70],[-140,70],[-120,70],[-95,72],[-80,73],[-65,62],[-60,55],[-55,50],[-66,45],[-70,42],[-75,38],[-76,35],[-81,31],[-80,25],[-81.5,26],[-83,29],[-90,30],[-97,28],[-97,22],[-92,18],[-87,21.5],[-88,16],[-83,10],[-79.5,9.3],[-77.5,8],[-80,7.2],[-85,11],[-92,15],[-105,20],[-110,23],[-112,29],[-117,32],[-121,35],[-124,40],[-124,46],[-125,50],[-132,55],[-140,60],[-150,60],[-160,58],[-165,62]],
+ [[-55,60],[-43,60],[-35,66],[-20,70],[-18,77],[-30,83],[-60,82],[-72,78],[-60,70]],
+ [[-77.5,8],[-72,12],[-62,11],[-52,5],[-50,0],[-44,-2],[-35,-6],[-35,-10],[-39,-15],[-41,-22],[-48,-26],[-53,-34],[-58,-38],[-65,-42],[-68,-50],[-72,-53],[-75,-48],[-73,-40],[-71,-30],[-70,-18],[-76,-14],[-81,-6],[-80,0],[-78,2]],
+ [[-9,37],[-9,43],[-1.5,43.5],[-4.5,48.5],[1.5,50.5],[4,52],[8,54],[9,55.5],[11,54],[14,54],[20,54.5],[21,57],[24,59],[28,60],[33,66],[40,66],[45,68],[60,69],[70,73],[80,73],[100,77],[112,74],[130,71],[140,72],[160,70],[179,66],[179,62],[163,58],[156,51],[142,53],[141,47],[135,43],[130,42],[129,37],[126,35],[126,38],[122,40],[121,37],[119,35],[122,30],[120,26],[116,23],[110,21],[106,20],[108,15],[109,11],[105,8.7],[103,11],[100.5,13.5],[100,12],[102,6],[104,1.5],[101,3],[98.5,8],[98,16],[94,17],[92,22],[87,21],[85,20],[80,15],[80,10],[77,8],[73,17],[72,21],[67,24],[62,25],[57,25.5],[56.3,27.1],[54,26.8],[52,28],[50,30],[48,30],[48,28],[50,26],[51.5,24],[55,24],[56.3,26.2],[57,24],[59,22.5],[57,19],[52,16],[45,13],[43,13],[42,16],[39,21],[35,28],[34,28],[32.5,30],[34,31.5],[35.5,34],[36,36.5],[30,36.3],[26.5,38],[26,40.5],[23,40.5],[21,39],[19.5,41.5],[19,42],[13.7,45.6],[12,44],[8.5,44.3],[3,43.3],[0,40],[-0.5,38.5],[-2,36.7],[-5.5,36]],
+ [[8,44.3],[12.5,44],[14,42],[16,41.5],[18.5,40.2],[16.6,38.3],[15.6,38],[16,39.5],[15,40],[12.5,41.5],[10.5,43]],
+ [[5,58],[5,62],[10,64],[14,67],[18,69.5],[25,71],[31,70],[29,68],[28,66],[25,65.5],[21.5,65],[17,62],[18.5,60],[16,57],[12.5,56],[11,59],[8,58]],
+ [[-5.5,50],[1.5,51],[1.7,53],[-0.5,54.5],[-2,57],[-3.5,58.6],[-5,58.5],[-6,56.5],[-5,55],[-3,54.5],[-4.5,53],[-5,51.7]],[[-10,51.5],[-6,52],[-6,54.5],[-8,55],[-10,54]],
+ [[-17,15],[-17,21],[-13,27],[-10,30],[-6,35.8],[10,37],[11,33],[20,31],[25,32],[32.5,31],[32.5,30],[35,24],[38,18],[43,12],[51,11.5],[51,10],[48,5],[42,-1],[40,-4],[39,-10],[40.5,-15],[35,-24],[32.5,-26],[33,-29.5],[27.5,-33.8],[20,-34.8],[18.3,-34],[18,-32],[15,-27],[12,-18],[13,-12],[9,-2],[9,4],[6,4.3],[1,6],[-4,5],[-8,4.5],[-13,8],[-17,13]],
+ [[44,-25],[47,-25],[50,-15],[49,-12],[44,-17]],
+ [[114,-22],[114,-34],[118,-35],[123,-34],[130,-31.5],[135,-35],[138,-35],[141,-38],[147,-38],[150,-37],[153,-32],[153,-25],[146,-19],[143,-14],[142,-10.7],[136,-12],[131,-11.5],[130,-15],[126,-14],[122,-17],[116,-20.5]],
+ [[95,5.5],[98,4],[104,-2],[106,-6],[102,-4],[96,3]],[[105.5,-6],[114,-7],[114,-8.5],[106,-7.5]],[[109,1.5],[113,4],[117,7],[119,5],[118,1],[116,-4],[110,-3],[109,0]],
+ [[131,-1],[141,-2.5],[150,-6],[147,-8],[141,-9],[138,-8],[132,-4]],[[130,31],[132,34],[135,34],[140,35],[141,38],[142,43],[145,44],[141,45],[139,40],[136,37],[131,34.5]]];
+const WATER = [[[25.8, 40.1], [26.3, 40.7], [28.8, 41.3], [29.4, 41.3], [29.8, 40.7], [27.2, 40.3], [26.4, 39.9]], [[28,41.5],[28,44],[30,45.5],[33,46],[36,45.5],[39,47],[41.5,42],[36,41.5],[31,41.2]],[[47,45],[53,47],[54,42],[53,38],[50,37],[49,40],[47,43]]];
+const inPoly = (x, y, p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, yi] = p[i], [xj, yj] = p[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; };
+const landPts = []; for (let lo = -118; lo <= 150; lo += 1.5) for (let la = -45; la <= 66; la += 1.5) if (LAND.some(p => inPoly(lo, la, p)) && !WATER.some(p => inPoly(lo, la, p))) landPts.push([lo, la]);
+const P = { hou: [-95.3, 29.7], rot: [4.4, 51.9], rt: [50.2, 26.6], sha: [121.5, 31.2], sin: [103.8, 1.3], suez: [32.5, 30.3], bab: [43.4, 12.6], hor: [56.4, 26.5], mal: [100.8, 2.8],
+  pan: [-79.6, 9.1], gib: [-5.6, 35.9], bos: [29.0, 41.1], cape: [18.5, -34.8], dan: [11.0, 55.8], san: [-46.3, -24.0], nov: [37.8, 44.7], ph: [118.6, -20.3] };
+const CHK = [['Strait of Hormuz', 'hor', 20.0, 'Elevated', 3], ['Strait of Malacca', 'mal', 23.0, 'Low', 1], ['Suez Canal', 'suez', 4.5, 'Elevated', 3], ['Bab-el-Mandeb', 'bab', 4.0, 'High', 4],
+  ['Cape of Good Hope', 'cape', 9.0, 'Low', 1], ['Panama Canal', 'pan', 2.0, 'Moderate', 2], ['Turkish Straits', 'bos', 3.5, 'Low', 1], ['Danish Straits', 'dan', 3.2, 'Low', 1], ['Strait of Gibraltar', 'gib', 5.0, 'Low', 1]];
+MD.chk = CHK.map(c => { const base = Math.round(c[2] * 3.2 + 20); return { name: c[0], key: c[1], flow: c[2], risk: c[3], lvl: c[4], tr: Math.round(base * (0.8 + .4 * R())), avg: base }; });
+const CH = [[-6, 48.8], [-1, 50.1], [0.5, 50.3], [2.3, 51.2], 'rot'], EU = [[-9.8, 36.2], [-10.5, 43.5], ...CH], GULF = ['rt', [51.5, 27], [53, 26.3], 'hor', [56.6, 26], [57.2, 24.8], [60.5, 23]];
+const ROUTES = [
+  { p: [...GULF, [63, 17], [76, 6.5], [92, 6], [97, 5.6], 'mal', 'sin', [109, 5], [112, 10], [117, 21], [123, 27], [123, 30.5], 'sha'], k: 'tanker', n: 14 },
+  { p: [...GULF, [58.5, 17], [52, 13.5], 'bab', [38, 20], 'suez', [30, 33], [22, 34], [12, 37.4], 'gib', ...EU], k: 'tanker', n: 6 },
+  { p: [...GULF, [58.5, 17], [55, 8], [48, -5], [42, -22], [37, -31], [28, -36], 'cape', [2, -8], [-15, 3], [-21, 15], [-18, 28], [-11, 34], [-10.5, 43.5], ...CH], k: 'tanker', n: 9 },
+  { p: ['hou', [-88, 25], [-83, 23.6], [-79.5, 23.8], [-74, 27], [-50, 38], [-20, 46], ...CH], k: 'lng', n: 8 },
+  { p: ['san', [-45, -25.5], [-28, -18], [0, -32], 'cape', [22, -36], [45, -30], [78, -12], [88, 2], [92, 6], [97, 5.6], 'mal', 'sin', [109, 5], [112, 10], [117, 21], [123, 27], [123, 30.5], 'sha'], k: 'bulk', n: 8 },
+  { p: ['nov', [33, 43], 'bos', [27.5, 40.6], [26, 40.2], [25.5, 38.5], [22, 35.5], [12, 37.4], 'gib', ...EU], k: 'tanker', n: 5 },
+  { p: ['ph', [116, -12], [115.8, -8.6], [118.5, -3], [119.8, 3], [120, 12], [121, 20], [123, 27], 'sha'], k: 'bulk', n: 7 },
+  { p: ['rot', [4, 53.8], [7.5, 56.5], [10.5, 57.6], 'dan', [14, 55.3], [18, 56.5], [20, 58], [24, 59.6]], k: 'tanker', n: 3 },
+  { p: ['hou', [-88, 25], [-85, 21], [-81, 15], 'pan', [-79.5, 7], [-92, 6], [-112, 4]], k: 'lng', n: 5 }].map(r => ({ ...r, pts: r.p.map(q => typeof q === 'string' ? P[q] : q) }));
+ROUTES.forEach(r => { r.len = []; let s = 0; for (let k = 1; k < r.pts.length; k++) { s += Math.hypot(r.pts[k][0] - r.pts[k - 1][0], r.pts[k][1] - r.pts[k - 1][1]); r.len.push(s); } r.total = s; });
+const ships = ROUTES.flatMap((r, ri) => Array.from({ length: r.n }, () => ({ ri, t: R(), v: (0.012 + R() * .01) / r.total * 60, dir: R() < .8 ? 1 : -1 })));
+function at(r, t) { const d = t * r.total; let k = 0; while (k < r.len.length - 1 && r.len[k] < d) k++; const a = k ? r.len[k - 1] : 0, f = (d - a) / (r.len[k] - a || 1), A = r.pts[k], B = r.pts[k + 1]; return [A[0] + (B[0] - A[0]) * f, A[1] + (B[1] - A[1]) * f]; }
+let raf = 0, t0 = performance.now();
+function drawMap(now) {
+  const [x, w, h] = cv('mapC'), lon0 = -118, lon1 = 150, lat0 = -45, lat1 = 66, X = l => (l - lon0) / (lon1 - lon0) * w, Y = l => (lat1 - l) / (lat1 - lat0) * h;
+  const ds = Math.max(1.6, w / 180 * .55); x.fillStyle = css('--dim'); x.globalAlpha = .45; landPts.forEach(q => x.fillRect(X(q[0]) - ds / 2, Y(q[1]) - ds / 2, ds, ds)); x.globalAlpha = 1;
+  x.strokeStyle = css('--line'); x.globalAlpha = .35; [-60, -30, 0, 30, 60, 90, 120].forEach(lo => { x.beginPath(); x.moveTo(X(lo), 0); x.lineTo(X(lo), h); x.stroke(); }); [-30, 0, 30, 60].forEach(la => { x.beginPath(); x.moveTo(0, Y(la)); x.lineTo(w, Y(la)); x.stroke(); }); x.globalAlpha = 1;
+  x.fillStyle = css('--dim'); [-60, 0, 60, 120].forEach(lo => x.fillText(lo + '°', X(lo) + 3, h - 5)); x.fillText('equator', 4, Y(0) - 3);
+  ROUTES.forEach(r => { x.strokeStyle = r.k === 'bulk' ? css('--cyan') : r.k === 'lng' ? css('--amber') : css('--phos'); x.globalAlpha = .22; x.lineWidth = 1.2; x.beginPath(); r.pts.forEach((q, k) => k ? x.lineTo(X(q[0]), Y(q[1])) : x.moveTo(X(q[0]), Y(q[1]))); x.stroke(); x.globalAlpha = 1; });
+  const dt = (now - t0) / 1000; t0 = now;
+  ships.forEach(s => { if (!MD.RM) { s.t += s.v * dt * s.dir; if (s.t > 1) s.t -= 1; if (s.t < 0) s.t += 1; } const r = ROUTES[s.ri], q = at(r, s.t);
+    x.fillStyle = r.k === 'bulk' ? css('--cyan') : r.k === 'lng' ? css('--amber') : css('--phos'); x.shadowColor = x.fillStyle; x.shadowBlur = 6; x.fillRect(X(q[0]) - 2, Y(q[1]) - 2, 4, 4); x.shadowBlur = 0; });
+  const ph = now / 1000;
+  MD.chk.forEach(c => { const q = P[c.key], col = c.lvl >= 4 ? css('--red') : c.lvl >= 3 ? css('--amber') : css('--phos'); x.strokeStyle = col; x.fillStyle = col;
+    const pulse = MD.RM ? .5 : (ph * (0.4 + c.lvl * .15)) % 1; x.globalAlpha = 1 - pulse; x.lineWidth = 1.5; x.beginPath(); x.arc(X(q[0]), Y(q[1]), 5 + pulse * (8 + c.lvl * 5), 0, 7); x.stroke();
+    x.globalAlpha = 1; x.beginPath(); x.arc(X(q[0]), Y(q[1]), 3.5, 0, 7); x.fill(); if (w > 620) { x.fillStyle = css('--ink'); x.fillText(c.name.replace('Strait of ', '').replace(' Canal', ''), X(q[0]) + 7, Y(q[1]) - 6); } });
+  const lg = [['Crude and product tankers', '--phos'], ['LNG carriers', '--amber'], ['Dry bulk', '--cyan']]; x.fillStyle = css('--p1'); x.globalAlpha = .88; x.fillRect(4, 4, 214, 58); x.globalAlpha = 1; x.strokeStyle = css('--line'); x.strokeRect(4.5, 4.5, 213, 57); lg.forEach((l, k) => { x.fillStyle = css(l[1]); x.fillRect(10, 12 + k * 16, 8, 8); x.fillStyle = css('--dim'); x.fillText(l[0], 24, 20 + k * 16); });
+  if (MD.active === 'ship' && !MD.RM) raf = requestAnimationFrame(drawMap); }
+const fs = Array.from({ length: 52 }, (_, k) => 78 + 18 * Math.sin(k / 9) + 6 * R.normal());
+MD.renderers.ship = () => {
+  $('chkT').tBodies[0].innerHTML = MD.chk.map(c => { const d = c.tr / c.avg - 1; return `<tr><td class="l">${c.name}</td><td>${c.tr}</td><td class="${d >= 0 ? 'up' : 'dn'}">${pc(d, 0)}</td><td>${c.flow.toFixed(1)}</td><td class="l ${c.lvl >= 4 ? 'dn' : c.lvl >= 3 ? 'amb' : c.lvl >= 2 ? 'cy' : 'up'}">${c.risk}</td></tr>`; }).join('');
+  lineChart('fsC', [{ d: fs, col: css('--cyan'), w: 1.8, fill: true, dot: true }], { yfmt: v => v.toFixed(0), xlab: k => k === 0 ? '52w ago' : k === fs.length - 1 ? 'now' : '' });
+  cancelAnimationFrame(raf); t0 = performance.now(); raf = requestAnimationFrame(drawMap); };
+
+// ================= BATTERY =================
+const ST = [['Mining', [['Lithium', 'Australia', 47], ['Lithium', 'Chile', 24], ['Cobalt', 'DR Congo', 74], ['Graphite', 'China', 77]]],
+  ['Refining', [['Lithium', 'China', 65], ['Lithium', 'Chile', 25], ['Cobalt', 'China', 76], ['Nickel', 'Indonesia', 45]]],
+  ['Cathode & anode', [['Cathode', 'China', 85], ['Cathode', 'Korea', 9], ['Anode', 'China', 93], ['Anode', 'Japan', 4]]],
+  ['Cells', [['Cells', 'China', 77], ['Cells', 'Poland/EU', 8], ['Cells', 'USA', 7], ['Cells', 'Korea', 5]]],
+  ['Electric vehicles', [['EV sales', 'China', 60], ['EV sales', 'Europe', 20], ['EV sales', 'USA', 10], ['EV sales', 'Rest', 10]]]];
+MD.batt = ST;
+MD.renderers.batt = () => {
+  $('flow').innerHTML = `<svg class="flowsvg" id="fsvg" aria-hidden="true"></svg>` + ST.map((s, k) => `<div class="stage" id="st${k}"><h4>${s[0]}</h4>${s[1].map(r => `<div class="row"><span>${r[1]}<br><span class="dim">${r[0]}</span></span><div class="bar"><i style="left:0;width:${r[2]}%;background:${r[2] >= 60 ? 'var(--red)' : r[2] >= 35 ? 'var(--amber)' : 'var(--phos)'}"></i></div><span>${r[2]}%</span></div>`).join('')}</div>`).join('');
+  requestAnimationFrame(() => { const f = $('flow').getBoundingClientRect(), svg = $('fsvg'); svg.setAttribute('viewBox', `0 0 ${f.width} ${f.height}`); svg.style.width = $('flow').scrollWidth + 'px';
+    let p = ''; for (let k = 0; k < ST.length - 1; k++) { const a = $('st' + k).getBoundingClientRect(), b = $('st' + (k + 1)).getBoundingClientRect(); for (const o of [.35, .5, .65]) { const y1 = a.top - f.top + a.height * o, y2 = b.top - f.top + b.height * o, x1 = a.right - f.left, x2 = b.left - f.left; p += `<path d="M${x1} ${y1} C${x1 + 14} ${y1} ${x2 - 14} ${y2} ${x2} ${y2}"/>`; } }
+    svg.innerHTML = p; });
+  const li = U.findIndex(u => u[0] === 'LI'), hg = U.findIndex(u => u[0] === 'HG');
+  $('battK').innerHTML = [[`$${px(MD.last[li])}`, `Lithium ${pc(MD.day(li))} today`], [`$${px(MD.last[hg])}`, `Copper ${pc(MD.day(hg))} today`], ['2 of 3', 'Refining steps where one country holds over 60%']].map(k => `<div class="pn kpi"><b>${k[0]}</b><span>${k[1]}</span></div>`).join(''); };
+
+// ================= MINE OPS =================
+const SITES = [['Escondida', 'Chile', 'Copper', -24.3, -69.1, 18, 1], ['Grasberg', 'Indonesia', 'Copper, gold', -4.05, 137.1, 14, 22], ['Greenbushes', 'Australia', 'Lithium', -33.9, 116.1, 17, 3],
+  ['Kamoto', 'DR Congo', 'Cobalt, copper', -10.7, 25.4, 24, 6], ['Carlin', 'Nevada, USA', 'Gold', 40.9, -116.3, 12, 1], ['Norilsk', 'Russia', 'Nickel, palladium', 69.3, 88.2, -8, 2],
+  ['Olympic Dam', 'Australia', 'Copper, uranium', -30.4, 136.9, 22, 1], ['Salar de Atacama', 'Chile', 'Lithium', -23.5, -68.3, 16, 0], ['Bingham Canyon', 'Utah, USA', 'Copper', 40.5, -112.2, 13, 1], ['Kiruna', 'Sweden', 'Iron ore', 67.9, 20.2, 2, 3]];
+MD.sites = SITES.map(s => { const temp = s[5] + 5 * R.normal(), wind = Math.max(2, 18 + 14 * R.normal()), rain = Math.max(0, s[6] * (0.3 + 1.4 * R()) + (R() < .1 ? 25 : 0));
+  return { name: s[0], ctry: s[1], com: s[2], lat: s[3], lon: s[4], temp, wind, rain, status: wind > 42 || rain > 25 ? 'Weather watch' : 'Normal' }; });
+const ZONES = [[-23, -68.5, 3], [-3.5, 137, 3], [36, 140, 4], [-8, 29, 3], [39, -117, 3], [-1, 99, 4], [14, 121, 4], [-31, -71, 3], [39, 29, 4], [28, 84, 3], [40.6, -112.5, 2], [-41, 174, 3]];
+const hav = (a, b, c, d) => { const r = Math.PI / 180, x = Math.sin((c - a) * r / 2) ** 2 + Math.cos(a * r) * Math.cos(c * r) * Math.sin((d - b) * r / 2) ** 2; return 12742 * Math.asin(Math.sqrt(x)); };
+MD.quakes = [];
+function quake(silent) { const z = ZONES[R.int(ZONES.length)], lat = z[0] + z[2] * R.normal() * .5, lon = z[1] + z[2] * R.normal() * .5, m = Math.min(7.2, 2.6 + Math.abs(R.normal()) * 1.4);
+  let best = null; MD.sites.forEach(s => { const d = hav(lat, lon, s.lat, s.lon); if (!best || d < best.d) best = { s, d }; });
+  const q = { t: MD._qt || nowT(), m, lat, lon, near: best.s.name, d: best.d, alert: best.d < 300 && m >= 4.5 }; MD.quakes.unshift(q); MD.quakes = MD.quakes.slice(0, 30);
+  if (q.alert && !silent) { MD.toast(`Seismic alert: M${m.toFixed(1)}`, `${Math.round(q.d)} km from ${q.near}. Check for operational impact.`); MD.pushNews('SEISMIC', `M${m.toFixed(1)} quake ${Math.round(q.d)} km from ${q.near} mine`); }
+  if (MD.active === 'ops') feedOps(); }
+for (let k = 12; k > 0; k--) { MD._qt = new Date(Date.now() - k * 37 * 60000).toISOString().slice(11, 16); quake(true); } MD._qt = null;
+function feedOps() { $('qkN').textContent = MD.quakes.filter(q => q.alert).length + ' site alerts';
+  $('qk').innerHTML = MD.quakes.map(q => `<div><time>${q.t} UTC</time><p><i class="${q.m >= 5.5 ? 'dn' : q.m >= 4.5 ? 'amb' : 'dim'}">M${q.m.toFixed(1)}</i>${q.lat.toFixed(1)}°, ${q.lon.toFixed(1)}°. ${Math.round(q.d)} km from ${q.near}${q.alert ? ' <span class="dn">· site alert</span>' : ''}</p></div>`).join(''); }
+MD.renderers.ops = () => { $('opsT').tBodies[0].innerHTML = MD.sites.map(s => `<tr><td class="l"><b>${s.name}</b><br><span class="dim">${s.ctry}</span></td><td class="l">${s.com}</td><td>${s.temp.toFixed(0)}°C</td><td>${s.wind.toFixed(0)} km/h</td><td>${s.rain.toFixed(0)} mm</td><td class="l ${s.status === 'Normal' ? 'up' : 'amb'}">${s.status}</td></tr>`).join(''); feedOps(); };
+
+// ================= GEO =================
+MD.geo = [['Persian Gulf', 72, 1, 'WTI, BRENT, NG'], ['Red Sea', 81, 0, 'BRENT, shipping'], ['Russia and Ukraine', 76, -1, 'NG, ZW, XPT'], ['South China Sea', 48, 1, 'Shipping, HG'],
+  ['Taiwan Strait', 55, 0, 'HG, chips'], ['DR Congo', 63, 1, 'Cobalt, HG'], ['Sahel', 58, 0, 'Gold, uranium'], ['Andes', 34, -1, 'HG, LI']].map(g => ({ region: g[0], score: g[1], trend: g[2], mkts: g[3] }));
+function gauge(g) { const a = Math.PI * (1 - g.score / 100), cx = 80, cy = 80, r = 62, ex = cx + r * Math.cos(a), ey = cy - r * Math.sin(a), c = g.score >= 70 ? 'var(--red)' : g.score >= 50 ? 'var(--amber)' : 'var(--phos)';
+  return `<div class="pn gauge"><svg viewBox="0 0 160 92" role="img" aria-label="${g.region} risk ${g.score} of 100"><path d="M18 80 A62 62 0 0 1 142 80" fill="none" stroke="var(--line)" stroke-width="12"/><path d="M18 80 A62 62 0 0 1 ${ex.toFixed(1)} ${ey.toFixed(1)}" fill="none" stroke="${c}" stroke-width="12"/><text x="80" y="76" text-anchor="middle" fill="var(--ink)" font-size="26" font-family="IBM Plex Mono,monospace" font-weight="600">${g.score}</text></svg>
+  <b>${g.region} <span class="${g.trend > 0 ? 'dn' : g.trend < 0 ? 'up' : 'dim'}">${g.trend > 0 ? '▲ rising' : g.trend < 0 ? '▼ easing' : '■ steady'}</span></b><span>${g.mkts}</span></div>`; }
+const EVT = [['Red Sea', 'Tanker diversions around the Cape rise for a third straight week'], ['Persian Gulf', 'Insurers lift war-risk premiums for Gulf transits'], ['Red Sea', 'Drone incident reported near a Red Sea shipping lane; no vessel damage'],
+  ['Russia and Ukraine', 'Pipeline maintenance cuts Eastern European gas flows'], ['DR Congo', 'Cobalt export quota talks resume in Kinshasa'], ['Andes', 'Copper smelter strike vote scheduled in the Andes'], ['Andes', 'Lithium brine permits face a new water-use review'],
+  ['Russia and Ukraine', 'Grain corridor inspections slow Black Sea loadings'], ['South China Sea', 'Naval exercise announced near a key Asian shipping lane'], ['Persian Gulf', 'Sanctions enforcement targets the shadow tanker fleet'], ['Taiwan Strait', 'Shipping insurers review Taiwan Strait transit terms'], ['Sahel', 'Gold export route disrupted by border closure']];
+MD.events = []; const pushEvt = (silent, t) => { const [region, e] = EVT[R.int(EVT.length)]; MD.events.unshift({ t: t || nowT(), e, region }); MD.events = MD.events.slice(0, 25); MD.pushNews('WIRE', e); if (MD.active === 'geo' && !silent) feedGeo(); };
+for (let k = 8; k > 0; k--) pushEvt(true, new Date(Date.now() - k * 53 * 60000).toISOString().slice(11, 16));
+function feedGeo() { $('geoF').innerHTML = MD.events.map(v => `<div><time>${v.t} UTC</time><p><i class="amb">${v.region}</i>${v.e}</p></div>`).join(''); }
+MD.renderers.geo = () => { $('geoG').innerHTML = MD.geo.map(gauge).join(''); feedGeo(); };
+
+// ================= timers =================
+MD.startWorld = () => { setInterval(() => quake(false), 38000); setInterval(() => pushEvt(false), 26000);
+  setInterval(() => { const i = R.int(U.length), d = MD.day(i); MD.pushNews(U[i][0], `${U[i][1]} ${d >= 0 ? 'up' : 'down'} ${Math.abs(d * 100).toFixed(1)}% at ${px(MD.last[i])}`); }, 9000);
+  for (let k = 0; k < 5; k++) { const i = R.int(U.length), d = MD.day(i); MD.pushNews(U[i][0], `${U[i][1]} ${d >= 0 ? 'up' : 'down'} ${Math.abs(d * 100).toFixed(1)}% at ${px(MD.last[i])}`); } };
+})();
+
+(function () {
+'use strict';
+const MD = window.MD, L = window.AlphaLab, U = L.UNIVERSE, N = U.length, { $, css, px, pc, usd, lineChart, cv } = MD;
+let mode = 'real'; MD.lab = null;
+const setMode = m => { mode = m; $('mReal').setAttribute('aria-pressed', m === 'real'); $('mTrap').setAttribute('aria-pressed', m === 'trap'); };
+$('mReal').onclick = () => setMode('real'); $('mTrap').onclick = () => setMode('trap');
+const bind = (id, f) => { const u = () => $(id + 'V').textContent = f($(id).value); $(id).oninput = u; u(); };
+bind('pop', v => v); bind('gens', v => v); bind('bps', v => v + ' bps');
+function log(m, c) { const s = document.createElement('span'); if (c) s.className = c; s.textContent = m + '\n'; $('log').appendChild(s); $('log').scrollTop = 1e9; }
+const kp = (el, arr) => $(el).innerHTML = arr.map(k => `<div class="kpi"><b style="font-size:19px">${k[0]}</b><span>${k[1]}</span></div>`).join('');
+kp('alphaK', [['—', 'Formulas tested'], ['—', 'Approved'], ['—', 'Overfitting risk'], ['—', 'Vault Sharpe']]);
+// ---- luck bar ----
+function drawLuck() { const [x, w, h] = cv('luck'); const lab = MD.lab;
+  if (!lab) { x.fillStyle = css('--dim'); x.fillText('Run the forge to see the luck bar.', 14, 26); return; }
+  const srs = lab.srs, lo = Math.min(-1, ...srs), hi = Math.max(4, ...srs), bins = 60, cnt = new Array(bins).fill(0);
+  srs.forEach(s => cnt[Math.min(bins - 1, Math.max(0, Math.floor((s - lo) / (hi - lo) * bins)))]++);
+  const pad = 30, mx = Math.max(...cnt), X = s => pad + (s - lo) / (hi - lo) * (w - pad - 10), bw = (w - pad - 10) / bins;
+  cnt.forEach((c, i) => { const bh = c / mx * (h - 64); x.fillStyle = (lo + (i + .5) / bins * (hi - lo)) > lab.bar ? css('--amber') : css('--line'); x.globalAlpha = .85; x.fillRect(pad + i * bw + 1, h - 26 - bh, bw - 2, bh); }); x.globalAlpha = 1;
+  x.fillStyle = css('--dim'); for (let s = Math.ceil(lo); s <= hi; s++) x.fillText(s, X(s) - 3, h - 9);
+  const bx = X(lab.bar); x.strokeStyle = css('--amber'); x.lineWidth = 2; x.setLineDash([6, 4]); x.beginPath(); x.moveTo(bx, 12); x.lineTo(bx, h - 26); x.stroke(); x.setLineDash([]);
+  x.fillStyle = css('--amber'); x.fillText(`luck bar ${lab.bar.toFixed(2)}`, bx + 6, 22);
+  lab.tr.verdicts.forEach((v, i) => { x.fillStyle = v.pass ? css('--phos') : css('--red'); x.shadowColor = x.fillStyle; x.shadowBlur = 8; x.beginPath(); x.arc(X(v.t.sr), 40 + (i % 4) * 14, 5, 0, 7); x.fill(); x.shadowBlur = 0; }); }
+MD.renderers.alpha = drawLuck;
+// ---- tribunal ----
+function curve(F, W) { const p = [0]; let e = 0; for (let t = F.warm; t < F.D.T - 1; t++) { let g = 0, to = 0;
+  for (let i = 0; i < N; i++) { const k = t * N + i, f = F.D._fwd[k]; if (f === f) g += W[k] * f; to += Math.abs(W[k] - (t ? W[k - N] : 0)); } e += g - to * F.cfg.bps / 1e4; p.push(e); } return p; }
+MD.renderers.trib = () => { const lab = MD.lab;
+  if (!lab) { $('verd').innerHTML = '<p class="dim">No verdicts yet. Run the Alpha Lab first.</p>'; const [x] = cv('eq'); x.fillStyle = css('--dim'); x.fillText('Waiting for an Alpha Lab run.', 14, 26); return; }
+  const { tr, vault, F } = lab;
+  $('tribSub').textContent = `${tr.tested.toLocaleString()} formulas tested, worth about ${tr.nEff} independent bets. To pass: Deflated Sharpe of at least 0.95, validation z of at least ${tr.zCrit.toFixed(2)}, and overfitting probability of at most 20% (this run: ${(tr.pbo * 100).toFixed(0)}%). The vault column shows every formula's out-of-sample result so you can audit the calls.`;
+  $('verd').innerHTML = `<table><thead><tr><th class="l">Formula (− means trade it inverted)</th><th>Search Sharpe</th><th>Deflated Sharpe</th><th>Validation Sharpe</th><th>Vault Sharpe</th><th>Verdict</th></tr></thead><tbody>${tr.verdicts.map((v, i) => `<tr><td class="l" style="white-space:normal;max-width:520px">${(v.t.flip ? '−' : '') + v.t.expr}</td><td>${v.t.sr.toFixed(2)}</td><td>${v.dsr.toFixed(2)}</td><td>${v.valSR.toFixed(2)} <span class="dim">(z ${v.valZ.toFixed(1)})</span></td><td class="${vault.per[i].oos >= 0 ? 'up' : 'dn'}">${vault.per[i].oos.toFixed(2)}</td><td><span class="stamp ${v.pass ? 'pass' : 'rej'}">${v.pass ? 'APPROVED' : 'REJECTED'}</span></td></tr>`).join('')}</tbody></table>`;
+  const s = [{ d: curve(F, vault.ens.W), col: css('--red'), w: 1.6 }]; if (lab.kept) s.push({ d: curve(F, lab.kept.W), col: css('--phos'), w: 2 });
+  const tot = F.D.T - 1 - F.warm; lineChart('eq', s, { yfmt: v => (v * 100).toFixed(0) + '%', bands: [{ a: 0, b: 0, alpha: 0, label: 'search' }, { a: F.vstart - F.warm, b: F.split - F.warm, alpha: .35, label: 'validation' }, { a: F.split - F.warm, b: tot, alpha: .7, label: 'sealed vault' }], zero: true }); };
+// ---- risk ----
+const STRESS = [['Hormuz closure', { WTI: .25, BRENT: .28, NG: .15, XAU: .04, HG: -.03, crypto: -.04 }], ['Crypto crash', { BTC: -.35, ETH: -.45, crypto: -.5, XAU: .02 }],
+  ['China stimulus', { HG: .12, LI: .18, XPT: .06, WTI: .05, BRENT: .05, ZC: .03, crypto: .06 }], ['Global risk-off', { crypto: -.2, BTC: -.15, XAU: .06, XAG: .02, HG: -.08, WTI: -.1, BRENT: -.1, NG: -.04 }],
+  ['Red Sea escalation', { BRENT: .09, WTI: .06, NG: .08, ZW: .04 }], ['Black Sea grain halt', { ZW: .15, ZC: .07, NG: .05 }]];
+let stressSel = 0;
+$('stressC').innerHTML = STRESS.map((s, k) => `<button class="chip" type="button" data-k="${k}" aria-pressed="${k === 0}">${s[0]}</button>`).join('');
+$('stressC').onclick = e => { const b = e.target.closest('[data-k]'); if (!b) return; stressSel = +b.dataset.k; [...$('stressC').children].forEach(c => c.setAttribute('aria-pressed', c === b)); stress(); };
+const shockOf = (sc, i) => sc[U[i][0]] !== undefined ? sc[U[i][0]] : (U[i][2] === 'crypto' && sc.crypto !== undefined ? sc.crypto : 0);
+function book() { return Math.max(1000, +$('book').value || 1e6); }
+function stress() { const lab = MD.lab, out = $('stressOut'), sc = STRESS[stressSel][1];
+  if (!lab || !lab.kept) { out.innerHTML = `<p class="dim">No approved book to stress yet. Shocks in this scenario: ${Object.entries(sc).map(([k, v]) => `${k === 'crypto' ? 'other crypto' : k} ${pc(v, 0)}`).join(', ')}.</p>`; return; }
+  const W = lab.kept.W, t = lab.F.D.T - 2, pos = U.map((u, i) => ({ i, w: W[t * N + i] })), b = book();
+  const rows = pos.map(p => ({ ...p, sh: shockOf(sc, p.i), pnl: p.w * shockOf(sc, p.i) * b })).sort((a, c) => Math.abs(c.pnl) - Math.abs(a.pnl)), tot = rows.reduce((s, r) => s + r.pnl, 0);
+  out.innerHTML = `<div class="kpi" style="margin-bottom:8px"><b class="${tot >= 0 ? 'up' : 'dn'}">${usd(tot)}</b><span>Instant P&amp;L on a ${usd(b)} book (${pc(tot / b)})</span></div>
+  <table><thead><tr><th class="l">Asset</th><th>Position</th><th>Shock</th><th>P&amp;L</th></tr></thead><tbody>${rows.slice(0, 7).map(r => `<tr><td class="l"><b>${U[r.i][0]}</b></td><td class="${r.w >= 0 ? 'up' : 'dn'}">${r.w >= 0 ? 'long' : 'short'} ${(Math.abs(r.w) * 100).toFixed(1)}%</td><td>${pc(r.sh, 0)}</td><td class="${r.pnl >= 0 ? 'up' : 'dn'}">${usd(r.pnl)}</td></tr>`).join('')}</tbody></table>
+  <p class="note">The book is market-neutral, so a shock that hits every asset the same way mostly cancels. The risk sits in the relative moves.</p>`; }
+function drawHeat() { const [x, w, h] = cv('heat'), rets = U.map((u, i) => { const a = []; for (let t = MD.D.T - 250; t < MD.D.T; t++) a.push(MD.hist[i][t] / MD.hist[i][t - 1] - 1); return a; }), C = L.corrMatrix(rets);
+  const lab = 46, s = Math.min((w - lab - 150) / N, (h - lab - 4) / N); x.font = `${Math.max(8, Math.min(10.5, s * .6))}px "IBM Plex Mono",monospace`;
+  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) { const c = C[i * N + j]; x.fillStyle = c >= 0 ? css('--phos') : css('--red'); x.globalAlpha = Math.min(1, Math.abs(c)) * .92 + .05; x.fillRect(lab + j * s, lab + i * s, s - 1, s - 1); }
+  x.globalAlpha = 1; x.fillStyle = css('--dim');
+  U.forEach((u, i) => { x.fillText(u[0], 2, lab + i * s + s * .72); x.save(); x.translate(lab + i * s + s * .72, lab - 4); x.rotate(-Math.PI / 2); x.fillText(u[0], 0, 0); x.restore(); });
+  const lx = lab + N * s + 24; [[1, 'Move together'], [.3, 'Loosely linked'], [0, 'Unrelated'], [-.3, 'Move apart']].forEach((l, k) => { x.fillStyle = l[0] >= 0 ? css('--phos') : css('--red'); x.globalAlpha = Math.abs(l[0]) * .92 + .05; x.fillRect(lx, lab + k * 22, 14, 14); x.globalAlpha = 1; x.fillStyle = css('--dim'); x.fillText(l[1], lx + 20, lab + k * 22 + 11); }); }
+function varDesk() { const lab = MD.lab, out = $('varOut');
+  if (!lab || !lab.kept) { out.innerHTML = `<p class="dim">${lab ? 'Nothing survived the tribunal, so nothing gets capital. On a zero-edge market, that is the right answer.' : 'The desk only sizes approved alphas. Run the Alpha Lab on the planted-edges market.'}</p>`; return; }
+  const k = lab.kept, Rk = L.riskDesk(k.oos, book(), L.RNG(9));
+  out.innerHTML = `<div class="g g4" style="margin-bottom:10px">${[[k.srOOS.toFixed(2), 'Vault Sharpe'], [pc(k.ann, 1), 'Vault annual return'], [pc(k.dd, 1).replace('+', ''), 'Vault max drawdown'], [(k.to * 100).toFixed(0) + '%', 'Daily turnover']].map(x => `<div class="kpi"><b style="font-size:19px">${x[0]}</b><span>${x[1]}</span></div>`).join('')}</div>
+  <table><thead><tr><th class="l">One-day loss</th><th>95%</th><th>99%</th></tr></thead><tbody>${[['Historical VaR', 'historical'], ['Parametric VaR', 'parametric'], ['Monte Carlo VaR', 'monteCarlo'], ['Expected shortfall', 'cvar']].map(([n, key]) => `<tr><td class="l">${n}</td><td>${usd(Rk[0.95][key])}</td><td>${usd(Rk[0.99][key])}</td></tr>`).join('')}</tbody></table>
+  <p class="note">Expected shortfall is the average loss on days worse than the VaR line. When it sits well above VaR, the tails are fat.</p>`; }
+$('book').oninput = () => { varDesk(); stress(); };
+MD.renderers.risk = () => { varDesk(); stress(); drawHeat(); };
+// ---- run the forge ----
+$('go').onclick = () => {
+  $('go').disabled = true; $('log').textContent = ''; const seed = Math.max(1, +$('seed').value | 0), edge = mode === 'real' ? 1 : 0;
+  log(`Building ${edge ? 'a market with two planted edges' : 'the trap: a market with no edge at all'} (seed ${seed}).`);
+  setTimeout(() => { const D = L.simulate(2520, seed, edge), F = new L.Forge(D, { pop: +$('pop').value, gens: +$('gens').value, bps: +$('bps').value, seed: seed + 3 });
+    log('Seeding generation zero with random formulas...');
+    setTimeout(() => { F.init(); let g = 0;
+      const step = () => { const b = F.step(); g++; log(`gen ${String(g).padStart(2)}/${F.cfg.gens}  ${String(F.trials.size).padStart(5)} tested  best search Sharpe ${b.sr.toFixed(2)}`);
+        kp('alphaK', [[F.trials.size.toLocaleString(), 'Formulas tested'], ['…', 'Approved'], ['…', 'Overfitting risk'], ['…', 'Vault Sharpe']]);
+        if (g < F.cfg.gens) return setTimeout(step, 0);
+        log('Search complete. Convening the tribunal.', 'warn');
+        setTimeout(() => { const hof = F.hallOfFame(), tr = F.tribunal(hof), surv = tr.verdicts.filter(v => v.pass).map(v => v.t), vault = F.vault(hof), kept = surv.length ? F.vault(surv).ens : null;
+          MD.lab = { F, tr, vault, kept, oos: kept ? kept.oos : null, srs: [...F.trials.values()].map(t => t.sr), bar: tr.verdicts.length ? tr.verdicts[0].bar : 0, oracle: F.oracle(), mode, seed };
+          if (kept) MD.lab.kept.oos = kept.oos;
+          tr.verdicts.forEach(v => log(`${v.pass ? 'APPROVED' : 'rejected'}  DSR ${v.dsr.toFixed(2)}  val z ${v.valZ.toFixed(1)}  ${(v.t.flip ? '−' : '') + v.t.expr}`, v.pass ? 'ok' : 'bad'));
+          log(`Overfitting probability across the field: ${(tr.pbo * 100).toFixed(0)}%.`, tr.pbo > .2 ? 'bad' : 'ok'); log('Opening the vault...', 'warn');
+          log(`Naive, ship all ${hof.length}: vault Sharpe ${vault.ens.srOOS.toFixed(2)}.`, vault.ens.srOOS > 0 ? '' : 'bad');
+          log(kept ? `Tribunal-approved, ${surv.length}: vault Sharpe ${kept.srOOS.toFixed(2)}, ${pc(kept.ann, 1)} a year.` : 'Tribunal-approved: nothing ships.', kept ? 'ok' : 'warn');
+          log(`Answer key, the planted formula itself: vault Sharpe ${MD.lab.oracle.toFixed(2)}.`);
+          kp('alphaK', [[tr.tested.toLocaleString(), 'Formulas tested'], [`${surv.length} of ${hof.length}`, 'Approved'], [(tr.pbo * 100).toFixed(0) + '%', 'Overfitting risk'], [kept ? kept.srOOS.toFixed(2) : 'none', 'Vault Sharpe']]);
+          MD.toast(kept ? 'Tribunal verdict: capital approved' : 'Tribunal verdict: nothing ships', kept ? `${surv.length} alpha${surv.length > 1 ? 's' : ''} approved. Vault Sharpe ${kept.srOOS.toFixed(2)}. See the Tribunal and Risk tabs.` : 'Every candidate failed. See the Tribunal tab for why.');
+          MD.pushNews('ALPHA', kept ? `Tribunal approves ${surv.length} alpha${surv.length > 1 ? 's' : ''}, vault Sharpe ${kept.srOOS.toFixed(2)}` : 'Tribunal rejects every candidate; nothing ships');
+          drawLuck(); $('go').disabled = false; }, 20); };
+      setTimeout(step, 0); }, 20); }, 20); };
+
+// ================= AI ANALYST =================
+const quoteRow = i => ({ symbol: U[i][0], name: U[i][1], sector: U[i][2], last: +MD.last[i].toPrecision(6), day_pct: +(MD.day(i) * 100).toFixed(2), m1_pct: +(MD.chg(i, 21) * 100).toFixed(1), y1_pct: +(MD.chg(i, 252) * 100).toFixed(1), vol_ann_pct: +(MD.vol[i] * Math.sqrt(252) * 100).toFixed(0) });
+const TOOLS = [
+  { name: 'get_quotes', description: 'Live simulated quotes. Returns last price, day/1M/1Y % change and annualized volatility. Pass symbols (e.g. ["WTI","BTC"]) or omit for all 26 assets.', inputSchema: { type: 'object', properties: { symbols: { type: 'array', items: { type: 'string' } } } },
+    execute: ({ symbols }) => { const s = Array.isArray(symbols) && symbols.length ? symbols.map(x => String(x).toUpperCase()) : null; return U.map((u, i) => i).filter(i => !s || s.includes(U[i][0])).map(quoteRow); } },
+  { name: 'get_forward_curve', description: 'Forward curve for one of WTI, BRENT, NG, XAU, HG, ZC: 24 monthly prices today and one month ago.', inputSchema: { type: 'object', properties: { symbol: { type: 'string' } }, required: ['symbol'] },
+    execute: ({ symbol }) => { const s = String(symbol).toUpperCase(); if (!['WTI', 'BRENT', 'NG', 'XAU', 'HG', 'ZC'].includes(s)) throw new Error('Curves exist for WTI, BRENT, NG, XAU, HG, ZC only'); const c = MD.curveOf(s); return { symbol: s, today: c.now.map(v => +v.toPrecision(5)), one_month_ago: c.ago.map(v => +v.toPrecision(5)) }; } },
+  { name: 'get_positioning', description: 'COT managed-money positioning for the 10 physical commodities: net contracts, weekly change, 3-year percentile.', execute: () => MD.cot.map(c => ({ symbol: c.sym, net: c.net, week_change: c.wk, percentile_3y: c.pct })) },
+  { name: 'get_crack_spreads', description: 'Refining margins in USD/bbl: 3-2-1, gasoline and diesel cracks, now and averages.', execute: () => { const c = MD.crack, n = c.c321.length, avg = (a, k) => +(a.slice(-k).reduce((s, v) => s + v, 0) / k).toFixed(2); return { c321_now: +c.c321[n - 1].toFixed(2), c321_avg_1y: avg(c.c321, 252), gasoline_now: +c.gas[n - 1].toFixed(2), diesel_now: +c.dsl[n - 1].toFixed(2) }; } },
+  { name: 'get_chokepoints', description: 'Maritime chokepoints: transits today vs 30-day average, oil flow (mb/d, rounded public estimates), risk level. Also geopolitical risk scores 0-100 by region.', execute: () => ({ chokepoints: MD.chk.map(c => ({ name: c.name, transits: c.tr, avg30: c.avg, oil_mbd: c.flow, risk: c.risk })), regions: MD.geo, recent_events: MD.events.slice(0, 6).map(e => e.e) }) },
+  { name: 'get_mine_ops', description: 'Weather status at 10 major mines and recent seismic events near them.', execute: () => ({ sites: MD.sites.map(s => ({ site: s.name, commodity: s.com, status: s.status, wind_kmh: Math.round(s.wind), rain_mm: Math.round(s.rain) })), quakes: MD.quakes.slice(0, 8).map(q => ({ mag: +q.m.toFixed(1), km_to_site: Math.round(q.d), site: q.near, alert: q.alert })) }) },
+  { name: 'get_alpha_lab', description: "Latest Alpha Lab run: market mode, each hall-of-fame formula with search Sharpe, deflated Sharpe, validation z, vault Sharpe and verdict; ensemble results; the answer key's Sharpe. Returns {ran:false} if not run yet.",
+    execute: () => { const l = MD.lab; if (!l) return { ran: false }; return { ran: true, market: l.mode === 'real' ? 'planted edges' : 'trap (zero edge)', formulas_tested: l.tr.tested, effective_bets: l.tr.nEff, pbo: +l.tr.pbo.toFixed(2), z_required: +l.tr.zCrit.toFixed(2),
+      candidates: l.tr.verdicts.map((v, i) => ({ formula: (v.t.flip ? '-' : '') + v.t.expr, search_sharpe: +v.t.sr.toFixed(2), deflated_sharpe: +v.dsr.toFixed(2), validation_z: +v.valZ.toFixed(2), vault_sharpe: +l.vault.per[i].oos.toFixed(2), verdict: v.pass ? 'approved' : 'rejected' })),
+      naive_vault_sharpe: +l.vault.ens.srOOS.toFixed(2), approved_vault_sharpe: l.kept ? +l.kept.srOOS.toFixed(2) : null, answer_key_vault_sharpe: +l.oracle.toFixed(2) }; } }];
+const RULES = `You are the analyst inside MineDime, a commodity and digital-commodity terminal. Every number on this terminal is SIMULATED (a demo feed, not live markets); say so briefly when it matters and never present it as real market data. Use the tools to fetch data before answering; don't invent figures. Style: terse and concrete like a Bloomberg desk note. Plain text, short paragraphs or "- " bullet lines, no markdown headers or tables, under 220 words unless asked for more. Explain terms in plain language. Don't tell the user to buy or sell anything; describe what the data shows and the risks.`;
+const turns = []; let ctl = null, sample = null;
+function bubble(who, cls) { const m = document.createElement('div'); m.className = 'msg ' + (cls || ''); m.innerHTML = `<div class="who"></div><div class="tools"></div><div class="body"></div>`; m.querySelector('.who').textContent = who; $('msgs').appendChild(m); $('msgs').scrollTop = 1e9; return m; }
+const ERR = { not_granted: 'The analyst needs your permission to use Claude. Ask again to allow it.', rate_limited: 'Too many questions at once. Wait a moment, then ask again.', sampling_disabled: 'Claude access is turned off for this page.', session_expired: 'Your session expired. Reload the page.', prompt_too_large: 'That conversation got too long. Reload to start fresh.', refused: 'Claude declined that request.', upstream_error: 'The connection dropped. Ask again.' };
+async function ask(q) { q = q.trim(); if (!q || ctl) return; if (!sample) { MD.toast('Analyst unavailable', 'Open this page inside Claude to talk to the analyst.'); return; }
+  $('ask').value = ''; bubble('YOU', 'u').querySelector('.body').textContent = q; turns.push({ role: 'user', content: q });
+  const m = bubble('ANALYST'), body = m.querySelector('.body'), tl = m.querySelector('.tools'); body.textContent = 'Thinking...';
+  ctl = new AbortController(); $('send').disabled = true; $('stop').disabled = false;
+  const tools = TOOLS.map(t => ({ ...t, execute: (inp) => { const d = document.createElement('div'); d.className = 'tool'; d.textContent = '↳ pulling ' + t.name.replace('get_', '').replace('_', ' '); tl.appendChild(d); $('msgs').scrollTop = 1e9; return t.execute(inp || {}); } }));
+  try { const { text } = await sample([{ role: 'user', content: RULES + '\n\nAcknowledge silently and answer the questions that follow.' }, { role: 'assistant', content: 'Understood.' }, ...turns], { signal: ctl.signal, tools, onText: ({ text }) => { body.textContent = text; $('msgs').scrollTop = 1e9; } });
+    body.textContent = text; turns.push({ role: 'assistant', content: text }); }
+  catch (e) { body.textContent = e.text || ''; turns.pop(); if (e.code !== 'cancelled') { const p = document.createElement('div'); p.className = 'tool'; p.textContent = ERR[e.code] || 'Something went wrong. Ask again.'; m.appendChild(p); } else { const p = document.createElement('div'); p.className = 'tool'; p.textContent = 'Stopped.'; m.appendChild(p); } }
+  finally { ctl = null; $('send').disabled = false; $('stop').disabled = true; } }
+$('send').onclick = () => ask($('ask').value); $('ask').onkeydown = e => { if (e.key === 'Enter') ask($('ask').value); }; $('stop').onclick = () => ctl && ctl.abort();
+const PRE = ['Morning briefing: the three biggest moves on the board and what might be driving them', 'Review my last Alpha Lab run. Did the tribunal make the right calls?', 'Which chokepoint risk matters most for Brent right now, and why?', 'Explain the natural gas curve shape in plain language', 'Where is speculator positioning most crowded, and what does that usually mean?', 'Any mine-site or seismic risks I should know about today?'];
+$('presets').innerHTML = PRE.map((p, k) => `<button class="btn ghost" type="button" data-p="${k}" style="text-align:left;line-height:1.4">${p}</button>`).join('');
+$('presets').onclick = e => { const b = e.target.closest('[data-p]'); if (b) { MD.show('ai'); ask(PRE[+b.dataset.p]); } };
+(async () => { try { sample = window.claude && window.claude.use ? await window.claude.use('sample') : null; } catch (e) { sample = null; }
+  if (!sample) { $('aiNote').textContent = 'The analyst runs on Claude. Open this page inside Claude to use it.'; $('send').disabled = true; $('ask').disabled = true; [...$('presets').children].forEach(b => b.disabled = true); } })();
+MD.renderers.ai = () => {};
+
+// ================= START =================
+MD.startShell(); MD.startWorld(); MD.show('mkt');
+MD.boot(() => { MD.toast('Welcome to MineDime', 'New: Alpha Lab, Tribunal and the AI Analyst. Press / for the command line, or keys 1 to = to jump tabs.'); });
+})();
+
+</script>
+</body>
+</html>
