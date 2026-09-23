@@ -1,6 +1,5 @@
 """Alpha genomes: formulas as expression trees, with random growth, mutation and crossover.
 Blast radius: pure computation, touches no files, network, or processes."""
-import numpy as np
 from .ops import OPS, WINDOWS
 
 # A node is (name, children_tuple, window). Terminals have no children.

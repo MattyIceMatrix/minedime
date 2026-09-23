@@ -43,7 +43,8 @@ class Trial:
 
 
 class AlphaForge:
-    def __init__(self, data, cfg=Config()):
+    def __init__(self, data, cfg=None):
+        cfg = cfg if cfg is not None else Config()  # fresh Config per engine; never a shared default
         self.d, self.cfg = data, cfg
         self.rng = np.random.default_rng(cfg.seed)
         self.terms = [k for k in data if not k.startswith("_")]
