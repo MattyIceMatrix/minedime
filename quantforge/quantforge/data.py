@@ -12,7 +12,8 @@ def _cz(x):
 def synthetic_market(T=2520, N=50, seed=0, alpha_strength=1.0):
     """Fat tails, GARCH market volatility, persistent idiosyncratic vol regimes.
     alpha_strength=1 plants two weak real edges: 5-day reversal and 60-day momentum.
-    alpha_strength=0 is a market with NO edge at all: the perfect overfitting trap."""
+    alpha_strength=0 is a market with NO edge at all: the perfect overfitting trap.
+    Day t depends only on draws up to day t, so extending T never changes earlier days."""
     rng = np.random.default_rng(seed)
     a_rev, a_mom = 0.035 * alpha_strength, 0.02 * alpha_strength
     beta = rng.uniform(0.6, 1.4, N)
@@ -29,14 +30,17 @@ def synthetic_market(T=2520, N=50, seed=0, alpha_strength=1.0):
         edge = np.zeros(N)
         if t >= 60:
             edge = a_rev * -_cz(ret[t - 5:t].sum(0)) + a_mom * _cz(ret[t - 60:t - 5].sum(0))
-        ret[t] = beta * m + sig * (z + edge)
+        # minus half the day's variance: every asset's expected SIMPLE return is zero (plus any planted edge).
+        # Without it, higher-volatility assets drift up and a zero-edge market has an edge for long/short books.
+        ret[t] = beta * m + sig * (z + edge) - 0.5 * (beta ** 2 * m_var + sig ** 2)
         lvol_state = 0.9 * lvol_state + 0.3 * rng.standard_normal(N)
         logvol[t] = base_lv + lvol_state + 0.6 * np.abs(z)
         m_prev = m
     close = 50 * np.exp(np.cumsum(ret, 0))
     prev = np.vstack([close[:1], close[:-1]])
-    opn = prev * np.exp(0.3 * ret + 0.002 * rng.standard_normal((T, N)))
-    rng_hl = np.abs(rng.standard_normal((T, N))) * base_vol * 0.5
+    bar = np.random.default_rng([seed, 1]).standard_normal((T, 2, N))  # own stream, filled day by day
+    opn = prev * np.exp(0.3 * ret + 0.002 * bar[:, 0])
+    rng_hl = np.abs(bar[:, 1]) * base_vol * 0.5
     high = np.maximum(opn, close) * np.exp(rng_hl)
     low = np.minimum(opn, close) * np.exp(-rng_hl)
     vwap = (high + low + close) / 3

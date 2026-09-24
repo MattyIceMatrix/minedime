@@ -41,13 +41,16 @@ def pbo_cscv(pnl_matrix, n_blocks=10):
     half out-of-sample. ~0.5 means the selection process is picking noise."""
     T, M = pnl_matrix.shape
     blocks = np.array_split(np.arange(T), n_blocks)
+    # per-block sums let each split's Sharpe ratios be assembled without re-slicing the matrix (all trials fit)
+    S = np.array([pnl_matrix[b].sum(0) for b in blocks]); Q = np.array([(pnl_matrix[b] ** 2).sum(0) for b in blocks])
+    L = np.array([len(b) for b in blocks], dtype=float)
+    def sr(idx):
+        n = L[list(idx)].sum(); mu = S[list(idx)].sum(0) / n
+        return mu / (np.sqrt(np.maximum(Q[list(idx)].sum(0) / n - mu ** 2, 0)) + 1e-12)
     logits = []
     for is_idx in combinations(range(n_blocks), n_blocks // 2):
         oos_idx = [b for b in range(n_blocks) if b not in is_idx]
-        IS = pnl_matrix[np.concatenate([blocks[b] for b in is_idx])]
-        OS = pnl_matrix[np.concatenate([blocks[b] for b in oos_idx])]
-        sr_is = IS.mean(0) / (IS.std(0) + 1e-12)
-        sr_os = OS.mean(0) / (OS.std(0) + 1e-12)
+        sr_is, sr_os = sr(is_idx), sr(oos_idx)
         best = int(np.argmax(sr_is))
         rank = (sr_os < sr_os[best]).sum() + 1  # 1..M
         w = rank / (M + 1)

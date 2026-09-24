@@ -33,9 +33,9 @@ def mission(name, data, cfg, lines):
     lines += [f"## {name}", "",
               f"Formulas tried: {len(forge.trials)} (each long and short). Effective independent "
               f"bets: {n}. Luck bar (best Sharpe pure chance would hand you): "
-              f"{verdicts[0]['luck_bar_annual']:.2f}.", "",
-              f"Probability of Backtest Overfitting across the field: **{pbo:.0%}** "
-              f"(must be at most {cfg.pbo_threshold:.0%} or the whole search is voided).", "",
+              + (f"{verdicts[0]['luck_bar_annual']:.2f}." if verdicts else "n/a (no formula made money in the search)."), "",
+              f"For information, probability of backtest overfitting across all formulas on the validation "
+              f"stretch: **{pbo:.0%}** (about 50% means their ranking is luck; this is a diagnostic, not a gate).", "",
               f"To pass: Deflated Sharpe >= 0.95 on the search stretch AND validation z >= {z_crit:.2f} "
               "on a stretch the search never optimized on.", "",
               "| Alpha | Search Sharpe | Deflated Sharpe | Validation Sharpe (z) | Verdict | Vault (OOS) Sharpe |",
@@ -89,6 +89,8 @@ def main():
     fig, ax = plt.subplots(1, 2, figsize=(13, 4.5))
     for a, (title, raw, kept) in zip(ax, [("Mission 1: real edges", rawA, keptA),
                                            ("Mission 2: zero edge (trap)", rawB, keptB)]):
+        if not raw:  # nothing made money in the search, so there is no naive book to plot
+            a.set_title(title + " (nothing to plot)"); continue
         n_is = len(raw["pnl_is"])
         x_is, x_os = np.arange(n_is), n_is + np.arange(len(raw["pnl_oos"]))
         a.plot(x_is, np.cumsum(raw["pnl_is"]), color="tab:red", label="naive: ship everything")

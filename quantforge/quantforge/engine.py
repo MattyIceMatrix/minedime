@@ -25,8 +25,6 @@ class Config:
     max_corr: float = 0.5         # diversity rule for the hall of fame
     hall_size: int = 8
     dsr_threshold: float = 0.95
-    pbo_candidates: int = 40
-    pbo_threshold: float = 0.20
     min_coverage: float = 0.8
     seed: int = 7
 
@@ -40,6 +38,7 @@ class Trial:
     fitness: float
     pnl_is: np.ndarray = field(repr=False)
     turnover: float = 0.0
+    pnl_val: np.ndarray = field(default=None, repr=False)  # validation stretch; only the PBO diagnostic reads it
 
 
 class AlphaForge:
@@ -73,8 +72,11 @@ class AlphaForge:
             return None
         IS = slice(self.warm, self.vstart)  # search sees only this
         s = sig[IS]
-        if np.isfinite(s).mean() < self.cfg.min_coverage or np.nanstd(s) == 0:
+        if np.isfinite(s).mean() < self.cfg.min_coverage:
             return None
+        sd = np.nanstd(np.where(np.isfinite(s), s, np.nan))
+        if not sd > max(1e-12, 1e-9 * np.nanmean(np.abs(np.where(np.isfinite(s), s, np.nan)))):
+            return None  # constant, or only rounding noise
         w = signal_to_weights(sig)
         # Every formula is tested in both directions; keep the better one.
         # (Both directions count as tested, which the tribunal accounts for below.)
@@ -85,7 +87,8 @@ class AlphaForge:
             pnl = pnl_f
         sr = sharpe(pnl)
         fit = sr - self.cfg.complexity_penalty * A.size(node)
-        t = Trial(key, node, flip, sr, fit, pnl, to)
+        val, _ = self._pnl(w, slice(self.vstart, self.split), flip)
+        t = Trial(key, node, flip, sr, fit, pnl, to, val)
         self.trials[key] = t
         return t
 
@@ -126,7 +129,7 @@ class AlphaForge:
         ranked = sorted(self.trials.values(), key=lambda t: -t.fitness)
         hof = []
         for t in ranked:
-            if t.is_sharpe <= 0: break
+            if not t.is_sharpe > 0: continue  # skip; a later, lower-fitness formula may still be positive
             if all(abs(np.corrcoef(t.pnl_is, h.pnl_is)[0, 1]) < self.cfg.max_corr for h in hof):
                 hof.append(t)
             if len(hof) >= self.cfg.hall_size: break
@@ -138,11 +141,13 @@ class AlphaForge:
         return signal_to_weights(-sig if t.flip else sig)
 
     def tribunal(self, hof):
-        """Three gates. 1) Deflated Sharpe on the search stretch: beat the best Sharpe pure
+        """Two gates. 1) Deflated Sharpe on the search stretch: beat the best Sharpe pure
         luck gives after this many independent tries, with 95% confidence (autocorrelation-
         aware). 2) Replication: DSR survivors must be significant on the validation stretch,
-        which the search never optimized on, at family-wise 5% (Bonferroni). 3) PBO: across
-        the field, in-sample rank must predict out-of-sample rank, or the whole search is void."""
+        which the search never optimized on, at family-wise 5% (Bonferroni).
+        Plus a diagnostic, not a gate: PBO over every trial on the validation stretch. On the search
+        stretch it would be biased toward 'not overfit', because the search chose its trials on that
+        same data; on the shorter validation stretch it is too noisy for a hard threshold."""
         trials = list(self.trials.values())
         P = np.column_stack([t.pnl_is for t in trials])
         n_eff = 2 * effective_trials(P)  # x2: each formula was tried long and short
@@ -159,12 +164,7 @@ class AlphaForge:
             v["val_sharpe"] = sharpe(p)
             v["val_z"] = float(p.mean() / p.std() * np.sqrt(len(p) / autocorr_inflation(p)))
             v["passed"] = v["dsr_pass"] and v["val_z"] >= z_crit
-        order = np.argsort([-t.fitness for t in trials])
-        idx = order[np.linspace(0, len(order) - 1, self.cfg.pbo_candidates).astype(int)]
-        pbo = pbo_cscv(P[:, idx])
-        if pbo > self.cfg.pbo_threshold:
-            for v in verdicts:
-                v["passed"] = False
+        pbo = pbo_cscv(np.column_stack([t.pnl_val for t in trials])) if len(trials) > 1 else float("nan")
         return verdicts, pbo, n_eff, z_crit
 
     # --- deployment -----------------------------------------------------------

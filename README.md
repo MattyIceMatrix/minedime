@@ -10,14 +10,21 @@ A commodity and digital-commodity intelligence terminal with a built-in quant re
 - **Alpha Lab:** a genetic-programming engine invents trading formulas. A tribunal then tries to prove each one is luck:
   1. Deflated Sharpe ratio against the best score chance would give after the search's effective number of independent tries.
   2. Independent replication on a validation stretch the search never optimized on, at family-wise 5% (Bonferroni).
-  3. Probability of backtest overfitting across the whole field.
-  Only survivors reach the risk desk. The last 30% of history stays sealed until the verdict.
+
+  It also reports the probability of backtest overfitting across every formula on the validation stretch, as information
+  rather than a gate (see [AUDIT.md](AUDIT.md) for why). Only survivors reach the risk desk. The last 30% of history stays
+  sealed until the verdict.
 - **`quantforge/`:** the same engine in Python. `python3 quantforge/run_missions.py` (numpy, scipy, matplotlib).
 
 ## Verified behavior
-See [AUDIT.md](AUDIT.md). In short: no look-ahead bias in 600 random formulas across both engines; the JavaScript and
-Python statistics agree to 7 decimal places; on simulated markets the tribunal approved real edges and rejected every
-zero-edge market. The first gate is conservative: on pure noise it false-alarmed about 0.5–0.7% of the time against a nominal 5%.
+See [AUDIT.md](AUDIT.md), including the second review on 24 September 2026, which found and fixed a look-ahead leak in the
+website's market simulator. Since that fix:
+- **No look-ahead:** positions don't change when later prices are scrambled (300 formulas per engine), and neither
+  simulator's past changes when its history is extended.
+- **Parity:** the JavaScript and Python statistics agree to 7 decimal places.
+- **Calibration:** across 12 simulated markets the website's tribunal approved real edges in 4 of 6 and approved nothing
+  in 6 of 6 zero-edge markets. The first gate is conservative: on pure noise it false-alarmed about 0.7% of the time
+  against a nominal 5%.
 
 Re-run the checks: `python3 tests/test_engine.py` and `node tests/test_site.js`.
 

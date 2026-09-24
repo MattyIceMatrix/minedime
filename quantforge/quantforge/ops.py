@@ -8,8 +8,14 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 np.seterr(all="ignore")
 
 
+def _clean(x):
+    """NaN and +/-inf both mean 'missing'."""
+    x = np.asarray(x, dtype=float)
+    return np.where(np.isfinite(x), x, np.nan)
+
+
 def _win(x, d):
-    return _swv(x, d, axis=0)  # (T-d+1, N, d)
+    return _swv(_clean(x), d, axis=0)  # (T-d+1, N, d); any missing value in a window -> NaN result
 
 
 def _pad(out, d):
@@ -17,7 +23,15 @@ def _pad(out, d):
 
 
 def ts_mean(x, d):   return _pad(_win(x, d).mean(-1), d)
-def ts_std(x, d):    return _pad(_win(x, d).std(-1), d)
+
+
+def ts_std(x, d):
+    """Population std over [t-d+1, t]. Variation below 1e-7 of the level counts as none, so a constant window gives
+    exactly 0 rather than 1e-17 of rounding noise that a later division would blow up into a full-size signal."""
+    w = _win(x, d); m = w.mean(-1); s = w.std(-1)
+    return _pad(np.where(s <= 1e-7 * np.abs(m), 0.0, s), d)
+
+
 def ts_max(x, d):    return _pad(_win(x, d).max(-1), d)
 def ts_min(x, d):    return _pad(_win(x, d).min(-1), d)
 def ts_sum(x, d):    return _pad(_win(x, d).sum(-1), d)
@@ -29,37 +43,46 @@ def ts_delay(x, d):
     return out
 
 
-def ts_delta(x, d):  return x - ts_delay(x, d)
+def ts_delta(x, d):  x = _clean(x); return x - ts_delay(x, d)
 
 
 def ts_rank(x, d):
     w = _win(x, d)
-    return _pad((w < w[..., -1:]).sum(-1) / (d - 1), d)
+    r = (w < w[..., -1:]).sum(-1) / (d - 1)
+    return _pad(np.where(np.isnan(w).any(-1), np.nan, r), d)  # missing data stays missing
 
 
 def ts_zscore(x, d):
-    return (x - ts_mean(x, d)) / ts_std(x, d)
+    s = ts_std(x, d)
+    return np.where(s > 0, (_clean(x) - ts_mean(x, d)) / np.where(s > 0, s, 1.0), np.nan)
 
 
 def ts_corr(x, y, d):
     wx, wy = _win(x, d), _win(y, d)
-    dx = wx - wx.mean(-1, keepdims=True)
-    dy = wy - wy.mean(-1, keepdims=True)
-    c = (dx * dy).sum(-1) / np.sqrt((dx ** 2).sum(-1) * (dy ** 2).sum(-1))
-    return _pad(c, d)
+    bad = np.isnan(wx).any(-1) | np.isnan(wy).any(-1)
+    mx, my = wx.mean(-1, keepdims=True), wy.mean(-1, keepdims=True)
+    dx, dy = wx - mx, wy - my
+    vx, vy = (dx ** 2).mean(-1), (dy ** 2).mean(-1)
+    flat = (np.sqrt(vx) <= 1e-7 * np.abs(mx[..., 0])) | (np.sqrt(vy) <= 1e-7 * np.abs(my[..., 0]))
+    c = np.clip((dx * dy).mean(-1) / np.sqrt(np.where(flat, 1.0, vx * vy)), -1, 1)
+    return _pad(np.where(bad | flat, np.nan, c), d)
 
 
 def cs_rank(x):
-    nan = np.isnan(x)
-    r = np.argsort(np.argsort(np.where(nan, np.inf, x), axis=1), axis=1).astype(float)
-    n = (~nan).sum(1, keepdims=True)
-    r = r / np.maximum(n - 1, 1) - 0.5
-    r[nan] = np.nan
-    return r
+    """Cross-sectional rank scaled to [-0.5, 0.5]. Tied values share their average rank, so equal inputs never
+    turn into a ranking by column order."""
+    from scipy.stats import rankdata
+    x = _clean(x)
+    r = rankdata(x, method="average", axis=1, nan_policy="omit")
+    n = np.isfinite(x).sum(1, keepdims=True)
+    r = (r - 1) / np.maximum(n - 1, 1) - 0.5
+    return np.where(np.isfinite(x), r, np.nan)
 
 
 def cs_zscore(x):
-    return (x - np.nanmean(x, 1, keepdims=True)) / np.nanstd(x, 1, keepdims=True)
+    x = _clean(x); m = np.nanmean(x, 1, keepdims=True); s = np.nanstd(x, 1, keepdims=True)
+    ok = (s > 1e-7 * np.abs(m)) & (s > 0) & (np.isfinite(x).sum(1, keepdims=True) >= 2)
+    return np.where(ok, (x - m) / np.where(ok, s, 1.0), np.nan)
 
 
 def add(a, b): return a + b
