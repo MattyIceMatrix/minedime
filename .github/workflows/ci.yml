@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python-engine:
+    name: QuantForge engine (Python)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install numpy and scipy
+        run: python -m pip install --upgrade pip && python -m pip install numpy scipy
+      - name: Lint (pyflakes, 0 problems claimed in AUDIT.md)
+        run: python -m pip install pyflakes && python -m pyflakes quantforge tests
+      - name: Audit tests
+        run: python3 tests/test_engine.py
+      - name: Tribunal maths - deflated Sharpe, Bonferroni, PBO
+        run: python3 tests/test_tribunal_math.py
+      - name: JavaScript / Python statistics parity
+        run: python3 tests/test_parity.py
+
+  website:
+    name: Terminal page (Node)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Published claim guards - 13 tabs, CSP hashes, no remote URLs, no secrets
+        run: node tests/test_claims.js
+      - name: Site engine tests
+        run: node tests/test_site.js
