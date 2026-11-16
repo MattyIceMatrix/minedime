@@ -1,3 +1,74 @@
+# Third review — 14 November 2026
+
+An independent check of the three statistical claims the README makes, by re-deriving each one
+from its published definition and then pinning it with tests that fail on a deliberately broken
+engine. Added as `tests/test_tribunal_math.py` (11 tests), `tests/test_parity.py` (3) and
+`tests/test_claims.js` (7), plus the repository's first CI workflow.
+
+**The three claims hold.**
+
+| Claim | How it was checked | Result |
+|---|---|---|
+| Deflated Sharpe uses the *effective* number of independent tries | `expected_max_sharpe` re-derived from Bailey & Lopez de Prado (2014) with full-precision Euler-Mascheroni | agrees to 1.4e-12 across n = 2 to 10,000 |
+| | A P&L series built to sit exactly on the luck bar | DSR = 0.50000000 |
+| | `tribunal()` compared against `2 * effective_trials(pnl_is)` | equal; and far below the raw count |
+| | Mutation: swap in `2 * len(trials)` | `test_tribunal_deflates_by_effective_trials_not_the_raw_count` fails |
+| Replication is family-wise 5% (Bonferroni), not 5% per formula | `z_crit` compared against Phi^-1(1 - 0.05/k), k = gate-1 survivors | exact; forcing all 8 candidates through gate 1 moves z_crit from 1.645 to 2.498 |
+| | Mutation: fix k = 1 | `test_replication_gate_is_family_wise_bonferroni` fails |
+| | Simulated family-wise rate over a family of 6 | 4.8% corrected vs 26.0% uncorrected |
+| PBO covers every formula on the validation stretch | the matrix intercepted on its way into `pbo_cscv` | 280 validation days x all 211 formulas; columns match a fresh recompute; the search stretch is 579 days and the vault 421 |
+| | Mutation: pass `pnl_is` instead of `pnl_val` | `test_pbo_is_measured_on_the_validation_stretch` fails |
+
+**Also measured**
+
+- **PBO endpoints are exact.** A strategy that dominates every block gives 0.00; a population
+  where each strategy earns its whole P&L inside one block gives 1.00; pure noise gives 0.40-0.52.
+- **Pure luck does not survive both gates.** Over 400 searches of 60 zero-skill strategies each,
+  crowning the in-sample best and then testing it on fresh data: **0.00% approved**. Control: a
+  strategy with a genuine daily Sharpe of 0.2 was approved 98% of the time.
+- **Autocorrelation is penalised.** An AR(1) with phi = 0.6 (long-run variance ratio 4.0) gets
+  eta = 3.35 under the Bartlett window at q = 10, and the same daily Sharpe scores DSR 0.049
+  sticky against 0.305 iid.
+- **The sealed vault stays sealed.** Scrambling every price after the split leaves the formula
+  population, the hall of fame, n_eff, z_crit and every DSR and validation z bit-identical.
+  Control: the vault report itself moves (Sharpe 0.30 -> -0.72).
+- **Engine parity, as claimed.** Over nine P&L series at trial counts from 2 to 50,000, the
+  JavaScript and Python deflated Sharpe agree to **6.9e-08** and the luck bar to 1.9e-09 — the
+  "7 decimal places" in the README holds. PBO agrees exactly; `effective_trials` returns the
+  same integer from numpy's LAPACK routine and the hand-written Householder + implicit-QL solver.
+- **Python calibration, 14 fresh markets** at `population=150, generations=10`: zero-edge traps
+  produced an approval in **0 of 8**, planted-edge markets in **6 of 6**. `run_missions.py` at the
+  shipped default config: 2 approved on mission 1, nothing on mission 2, tribunal-approved
+  ensemble vault Sharpe 2.50 against the naive 2.12 and an answer-key ceiling of 3.19.
+- **The 1,500-trial cap now bites at the default config.** A default run produces 3,166 unique
+  formulas, so `effective_trials` sees a random 1,500-column sample: 178 directions rather than
+  the 226 the full population gives, i.e. n_eff 356 rather than 452. Measured effect on the
+  verdicts: none — 2 formulas pass gate 1 at 356, at 452, and at the raw 6,332.
+- **`effective_trials` is stricter than the participation ratio on real search output,** as its
+  docstring says: on a default run it counted 178 independent directions where the participation
+  ratio gives 11.0. On *independent* columns it is the other way round (446 for 600 columns at
+  T = 1,139), because a sample correlation matrix spreads its eigenvalues when M approaches T.
+- **13 tabs, confirmed.** The page defines 13, with 13 shortcut keys and a panel for each; the
+  README claims 13 and names 13. `tests/test_claims.js` now guards the count.
+- **The CSP hashes match the two scripts actually shipped** (recomputed with SHA-256), the page
+  holds **0 remote URLs** with all 5 `@font-face` rules on embedded `data:` URIs, and there is no
+  credential anywhere in the page or in the git history. The AI analyst goes through
+  `window.claude.use("sample")`, which carries no key, and degrades to a note elsewhere.
+- ESLint 8 with `eslint:recommended` and pyflakes both report 0 problems, including the new tests.
+
+**One methodological note, not a defect.** The deflated Sharpe models the null variance of a trial
+Sharpe as `eta/T` rather than estimating it from the spread of the trial Sharpes, which is the
+other variant Bailey & Lopez de Prado describe. On a zero-edge market the observed cross-trial
+standard deviation of daily in-sample Sharpe was 0.0476 against the 0.0296 the model assumes, so
+a variance-matched bar would be stricter (0.135 rather than 0.085 daily). The gate is still
+conservative where it counts: the measured false-alarm rate is 0.7% against a nominal 5%, and no
+zero-edge market in 8 produced an approval.
+
+**Not verified here.** The accessibility and browser rows above (axe-core on 13 tabs, 390 px
+overflow, heap and frame rate, injected-script blocking) need a real browser and were not re-run.
+
+---
+
 # Second review — 24 September 2026
 
 Two independent reviewers who had not seen the code examined commits `682364a` and `8ef40c6`, one for the Python engine
